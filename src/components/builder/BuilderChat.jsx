@@ -99,6 +99,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             // Проверяем альтернативный формат (JSON в теле)
             if (result.status === 'agent_ready' && result.agent_data) {
                 const { agent_name, business_type, knowledge_base } = result.agent_data;
+                const agentId = result.agent_id; // Извлекаем agent_id из JSON
                 
                 const isFemale = agent_name.toLowerCase().includes('виктори') || 
                                  agent_name.toLowerCase().includes('анна') || 
@@ -114,7 +115,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     business_type: business_type,
                     knowledge_base: knowledge_base,
                     avatar_url: avatarUrl,
-                    external_agent_id: result.agent_id || 'temp_' + Date.now(),
+                    external_agent_id: agentId, // Используем реальный agent_id из API
                     status: 'active'
                 });
             }

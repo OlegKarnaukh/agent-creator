@@ -42,6 +42,7 @@ export default function PreviewChat({ agentData }) {
             // Если есть external_agent_id, используем API
             if (agentData.external_agent_id) {
                 const result = await testAgent(agentData.external_agent_id, currentInput);
+                // Отображаем ответ от агента из API
                 setMessages(prev => [...prev, { 
                     role: 'assistant', 
                     content: result.response 
