@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Loader2, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { testAgent } from '@/components/api/constructorApi';
 
 export default function PreviewChat({ agentData }) {
     const [messages, setMessages] = useState([]);
@@ -33,22 +34,41 @@ export default function PreviewChat({ agentData }) {
 
         const userMessage = { role: 'user', content: input };
         setMessages(prev => [...prev, userMessage]);
+        const currentInput = input;
         setInput('');
         setIsLoading(true);
 
-        // Simulate agent response
-        setTimeout(() => {
-            const responses = [
-                `Спасибо за ваш вопрос! На основе моей базы знаний могу сказать следующее...`,
-                `Отличный вопрос! Давайте разберём подробнее...`,
-                `Да, конечно! Я могу помочь вам с этим. ${agentData.knowledge_base ? 'Согласно нашей информации...' : 'Расскажите подробнее о вашей задаче.'}`,
-                `Понимаю вас. Позвольте уточнить несколько деталей...`
-            ];
+        try {
+            // Если есть external_agent_id, используем API
+            if (agentData.external_agent_id) {
+                const result = await testAgent(agentData.external_agent_id, currentInput);
+                setMessages(prev => [...prev, { 
+                    role: 'assistant', 
+                    content: result.response 
+                }]);
+            } else {
+                // Fallback на локальную симуляцию
+                const responses = [
+                    `Спасибо за ваш вопрос! На основе моей базы знаний могу сказать следующее...`,
+                    `Отличный вопрос! Давайте разберём подробнее...`,
+                    `Да, конечно! Я могу помочь вам с этим. ${agentData.knowledge_base ? 'Согласно нашей информации...' : 'Расскажите подробнее о вашей задаче.'}`,
+                    `Понимаю вас. Позвольте уточнить несколько деталей...`
+                ];
+                
+                const response = responses[Math.floor(Math.random() * responses.length)];
+                setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+            }
+        } catch (error) {
+            console.error('Error testing agent:', error);
             
-            const response = responses[Math.floor(Math.random() * responses.length)];
-            setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+            // В случае ошибки показываем fallback ответ
+            setMessages(prev => [...prev, { 
+                role: 'assistant', 
+                content: 'Извините, произошла ошибка. Попробуйте еще раз.' 
+            }]);
+        } finally {
             setIsLoading(false);
-        }, 1200);
+        }
     };
 
     return (

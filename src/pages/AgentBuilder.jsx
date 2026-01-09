@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
+import { saveAgent } from '@/components/api/constructorApi';
 
 import BuilderChat from '@/components/builder/BuilderChat';
 import ConfigurePanel from '@/components/builder/ConfigurePanel';
@@ -24,6 +25,7 @@ export default function AgentBuilder() {
         knowledge_base: '',
         channels: [],
         status: 'draft',
+        external_agent_id: null,
         stats: {
             total_conversations: 0,
             today_conversations: 0,
@@ -40,6 +42,18 @@ export default function AgentBuilder() {
         
         setIsSaving(true);
         try {
+            // Если есть external_agent_id, сначала вызываем API сохранения
+            if (agentData.external_agent_id) {
+                try {
+                    const apiResult = await saveAgent(agentData.external_agent_id);
+                    console.log('Agent saved on external API:', apiResult);
+                } catch (apiError) {
+                    console.error('Error saving to external API:', apiError);
+                    // Продолжаем сохранение в локальной БД даже если внешний API упал
+                }
+            }
+
+            // Сохраняем в локальной базе данных
             const savedAgent = await base44.entities.Agent.create(agentData);
             navigate(createPageUrl('Dashboard') + `?agentId=${savedAgent.id}`);
         } catch (error) {

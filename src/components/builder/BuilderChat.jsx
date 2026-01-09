@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Paperclip, ArrowRight, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { base44 } from '@/api/base44Client';
+import { sendConstructorMessage } from '@/components/api/constructorApi';
 
 export default function BuilderChat({ onAgentUpdate, agentData }) {
+    const [userId, setUserId] = useState(null);
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
@@ -24,25 +27,58 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         scrollToBottom();
     }, [messages]);
 
+    useEffect(() => {
+        // Получаем ID текущего пользователя
+        const fetchUser = async () => {
+            try {
+                const user = await base44.auth.me();
+                setUserId(user.id);
+            } catch (error) {
+                console.error('Error fetching user:', error);
+            }
+        };
+        fetchUser();
+    }, []);
+
     const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+        if (!input.trim() || isLoading || !userId) return;
 
         const userMessage = { role: 'user', content: input };
         setMessages(prev => [...prev, userMessage]);
+        const currentInput = input;
         setInput('');
         setIsLoading(true);
 
-        // Simulate AI response based on conversation stage
-        setTimeout(() => {
+        try {
+            // Вызываем API конструктора
+            const result = await sendConstructorMessage(userId, currentInput, []);
+            
+            // Добавляем ответ от API
+            setMessages(prev => [...prev, { 
+                role: 'assistant', 
+                content: result.response 
+            }]);
+
+            // Если агент создан, обновляем данные
+            if (result.agent_created && result.agent_id) {
+                onAgentUpdate({ 
+                    external_agent_id: result.agent_id,
+                    status: 'active'
+                });
+            }
+        } catch (error) {
+            console.error('Error calling constructor API:', error);
+            
+            // Fallback на локальную симуляцию
             const messageCount = messages.filter(m => m.role === 'user').length;
             let response = '';
             let updates = {};
 
             if (messageCount === 0) {
                 response = `Отлично! Теперь давайте выберем имя и образ для вашего агента. Предлагаю варианты:\n\n👩 **Виктория** — профессиональный и дружелюбный образ\n👨 **Александр** — деловой и уверенный стиль\n\nКакой образ больше подходит вашему бизнесу?`;
-                updates = { business_type: input };
+                updates = { business_type: currentInput };
             } else if (messageCount === 1) {
-                const isVictoria = input.toLowerCase().includes('виктори') || input.toLowerCase().includes('1') || input.toLowerCase().includes('девушк');
+                const isVictoria = currentInput.toLowerCase().includes('виктори') || currentInput.toLowerCase().includes('1') || currentInput.toLowerCase().includes('девушк');
                 const name = isVictoria ? 'Виктория' : 'Александр';
                 const avatar = isVictoria 
                     ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
@@ -52,7 +88,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 updates = { name, avatar_url: avatar };
             } else if (messageCount === 2) {
                 response = `Отлично! Я сохранил эту информацию в базу знаний агента.\n\n✅ Агент готов к работе!\n\nТеперь вы можете:\n1. Протестировать агента в окне предпросмотра справа\n2. Настроить каналы связи (Telegram, WhatsApp)\n3. Запустить агента\n\nХотите что-то добавить или изменить?`;
-                updates = { knowledge_base: input, status: 'active' };
+                updates = { knowledge_base: currentInput, status: 'active' };
             } else {
                 response = 'Понял! Я обновил настройки агента. Что-то ещё хотите изменить?';
             }
@@ -62,9 +98,9 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             if (Object.keys(updates).length > 0) {
                 onAgentUpdate(updates);
             }
-            
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     const handleFileClick = () => {
