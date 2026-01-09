@@ -85,8 +85,8 @@ export default function AgentBuilder() {
                     
                     <Button
                         onClick={handleSave}
-                        disabled={!agentData.name || isSaving}
-                        className="bg-slate-900 hover:bg-slate-800 rounded-full px-6"
+                        disabled={!agentData.name || isSaving || agentData.status !== 'active'}
+                        className="bg-slate-900 hover:bg-slate-800 rounded-full px-6 disabled:opacity-50"
                     >
                         <Save className="w-4 h-4 mr-2" />
                         {isSaving ? 'Сохранение...' : 'Сохранить'}

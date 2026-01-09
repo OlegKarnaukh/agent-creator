@@ -59,10 +59,62 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 content: result.response 
             }]);
 
-            // Если агент создан, обновляем данные
-            if (result.agent_created && result.agent_id) {
+            // Проверяем наличие [AGENT_READY] в ответе
+            if (result.response && result.response.includes('[AGENT_READY]')) {
+                // Извлекаем данные агента
+                const nameMatch = result.response.match(/\[AGENT_NAME\](.*?)\[\/AGENT_NAME\]/);
+                const businessMatch = result.response.match(/\[BUSINESS_TYPE\](.*?)\[\/BUSINESS_TYPE\]/);
+                const knowledgeMatch = result.response.match(/\[KNOWLEDGE_BASE\](.*?)\[\/KNOWLEDGE_BASE\]/);
+                
+                const agentName = nameMatch ? nameMatch[1].trim() : '';
+                const businessType = businessMatch ? businessMatch[1].trim() : '';
+                const knowledgeBase = knowledgeMatch ? knowledgeMatch[1].trim() : '';
+
+                // Определяем аватар по полу имени
+                const isFemale = agentName.toLowerCase().includes('виктори') || 
+                                 agentName.toLowerCase().includes('анна') || 
+                                 agentName.toLowerCase().includes('мария') ||
+                                 agentName.toLowerCase().includes('елена');
+                
+                const avatarUrl = isFemale
+                    ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
+                    : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+
+                onAgentUpdate({ 
+                    name: agentName,
+                    business_type: businessType,
+                    knowledge_base: knowledgeBase,
+                    avatar_url: avatarUrl,
+                    external_agent_id: result.agent_id || 'temp_' + Date.now(),
+                    status: 'active'
+                });
+            } else if (result.agent_created && result.agent_id) {
+                // Старая логика для обратной совместимости
                 onAgentUpdate({ 
                     external_agent_id: result.agent_id,
+                    status: 'active'
+                });
+            }
+            
+            // Проверяем альтернативный формат (JSON в теле)
+            if (result.status === 'agent_ready' && result.agent_data) {
+                const { agent_name, business_type, knowledge_base } = result.agent_data;
+                
+                const isFemale = agent_name.toLowerCase().includes('виктори') || 
+                                 agent_name.toLowerCase().includes('анна') || 
+                                 agent_name.toLowerCase().includes('мария') ||
+                                 agent_name.toLowerCase().includes('елена');
+                
+                const avatarUrl = isFemale
+                    ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
+                    : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+
+                onAgentUpdate({ 
+                    name: agent_name,
+                    business_type: business_type,
+                    knowledge_base: knowledge_base,
+                    avatar_url: avatarUrl,
+                    external_agent_id: result.agent_id || 'temp_' + Date.now(),
                     status: 'active'
                 });
             }
