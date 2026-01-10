@@ -44,63 +44,27 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         if (!input.trim() || isLoading || !userId) return;
 
         const userMessage = { role: 'user', content: input };
-        setMessages(prev => [...prev, userMessage]);
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
+        
         const currentInput = input;
         setInput('');
         setIsLoading(true);
 
         try {
-            // Вызываем API конструктора
-            const result = await sendConstructorMessage(userId, currentInput, []);
+            // ✅ Отправляем весь массив сообщений в Railway API
+            const result = await sendConstructorMessage(userId, updatedMessages);
             
-            // Добавляем ответ от API
-            setMessages(prev => [...prev, { 
-                role: 'assistant', 
-                content: result.response 
-            }]);
-
-            // Проверяем наличие [AGENT_READY] в ответе
-            if (result.response && result.response.includes('[AGENT_READY]')) {
-                // Извлекаем данные агента
-                const nameMatch = result.response.match(/\[AGENT_NAME\](.*?)\[\/AGENT_NAME\]/);
-                const businessMatch = result.response.match(/\[BUSINESS_TYPE\](.*?)\[\/BUSINESS_TYPE\]/);
-                const knowledgeMatch = result.response.match(/\[KNOWLEDGE_BASE\](.*?)\[\/KNOWLEDGE_BASE\]/);
-                
-                const agentName = nameMatch ? nameMatch[1].trim() : '';
-                const businessType = businessMatch ? businessMatch[1].trim() : '';
-                const knowledgeBase = knowledgeMatch ? knowledgeMatch[1].trim() : '';
-
-                // Определяем аватар по полу имени
-                const isFemale = agentName.toLowerCase().includes('виктори') || 
-                                 agentName.toLowerCase().includes('анна') || 
-                                 agentName.toLowerCase().includes('мария') ||
-                                 agentName.toLowerCase().includes('елена');
-                
-                const avatarUrl = isFemale
-                    ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
-                    : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
-
-                onAgentUpdate({ 
-                    name: agentName,
-                    business_type: businessType,
-                    knowledge_base: knowledgeBase,
-                    avatar_url: avatarUrl,
-                    external_agent_id: result.agent_id || 'temp_' + Date.now(),
-                    status: 'active'
-                });
-            } else if (result.agent_created && result.agent_id) {
-                // Старая логика для обратной совместимости
-                onAgentUpdate({ 
-                    external_agent_id: result.agent_id,
-                    status: 'active'
-                });
-            }
-            
-            // Проверяем альтернативный формат (JSON в теле)
+            // ✅ Проверяем формат ответа Railway
             if (result.status === 'agent_ready' && result.agent_data) {
+                // Агент готов!
                 const { agent_name, business_type, knowledge_base } = result.agent_data;
-                const agentId = result.agent_id; // Извлекаем agent_id из JSON
+                const agentId = result.agent_id;
                 
+                console.log('✅ Agent created:', agentId);
+                console.log('Agent data:', result.agent_data);
+                
+                // Определяем аватар по имени
                 const isFemale = agent_name.toLowerCase().includes('виктори') || 
                                  agent_name.toLowerCase().includes('анна') || 
                                  agent_name.toLowerCase().includes('мария') ||
@@ -110,47 +74,49 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
                     : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
 
+                // Формируем финальное сообщение для пользователя
+                const finalMessage = `🎉 Отлично! Агент "${agent_name}" для "${business_type}" создан!\n\nТеперь вы можете:\n1. Протестировать агента в окне предпросмотра справа\n2. Нажать "Сохранить" для активации\n3. Настроить каналы связи (Telegram, WhatsApp)`;
+                
+                setMessages(prev => [...prev, { 
+                    role: 'assistant', 
+                    content: finalMessage
+                }]);
+
+                // Передаём данные агента в родительский компонент
                 onAgentUpdate({ 
                     name: agent_name,
                     business_type: business_type,
-                    knowledge_base: knowledge_base,
+                    knowledge_base: typeof knowledge_base === 'string' 
+                        ? knowledge_base 
+                        : JSON.stringify(knowledge_base, null, 2),
                     avatar_url: avatarUrl,
-                    external_agent_id: agentId, // Используем реальный agent_id из API
-                    status: 'active'
+                    external_agent_id: agentId,
+                    status: 'draft' // ✅ draft до нажатия "Сохранить"
                 });
-            }
-        } catch (error) {
-            console.error('Error calling constructor API:', error);
-            
-            // Fallback на локальную симуляцию
-            const messageCount = messages.filter(m => m.role === 'user').length;
-            let response = '';
-            let updates = {};
-
-            if (messageCount === 0) {
-                response = `Отлично! Теперь давайте выберем имя и образ для вашего агента. Предлагаю варианты:\n\n👩 **Виктория** — профессиональный и дружелюбный образ\n👨 **Александр** — деловой и уверенный стиль\n\nКакой образ больше подходит вашему бизнесу?`;
-                updates = { business_type: currentInput };
-            } else if (messageCount === 1) {
-                const isVictoria = currentInput.toLowerCase().includes('виктори') || currentInput.toLowerCase().includes('1') || currentInput.toLowerCase().includes('девушк');
-                const name = isVictoria ? 'Виктория' : 'Александр';
-                const avatar = isVictoria 
-                    ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
-                    : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
                 
-                response = `Прекрасный выбор! ${name} будет представлять вашу компанию.\n\nТеперь загрузите материалы для обучения агента:\n• Прайс-листы\n• FAQ\n• Описание услуг\n• Скрипты продаж\n\nИспользуйте кнопку 📎 для загрузки файлов или просто опишите основную информацию текстом.`;
-                updates = { name, avatar_url: avatar };
-            } else if (messageCount === 2) {
-                response = `Отлично! Я сохранил эту информацию в базу знаний агента.\n\n✅ Агент готов к работе!\n\nТеперь вы можете:\n1. Протестировать агента в окне предпросмотра справа\n2. Настроить каналы связи (Telegram, WhatsApp)\n3. Запустить агента\n\nХотите что-то добавить или изменить?`;
-                updates = { knowledge_base: currentInput, status: 'active' };
+            } else if (result.response) {
+                // Обычный ответ мета-агента (агент ещё не готов)
+                setMessages(prev => [...prev, { 
+                    role: 'assistant', 
+                    content: result.response 
+                }]);
             } else {
-                response = 'Понял! Я обновил настройки агента. Что-то ещё хотите изменить?';
+                // Неизвестный формат
+                console.error('Unexpected API response format:', result);
+                setMessages(prev => [...prev, { 
+                    role: 'assistant', 
+                    content: '❌ Произошла ошибка при обработке ответа. Попробуйте ещё раз.' 
+                }]);
             }
-
-            setMessages(prev => [...prev, { role: 'assistant', content: response }]);
             
-            if (Object.keys(updates).length > 0) {
-                onAgentUpdate(updates);
-            }
+        } catch (error) {
+            console.error('❌ Error calling constructor API:', error);
+            
+            // Показываем ошибку пользователю
+            setMessages(prev => [...prev, { 
+                role: 'assistant', 
+                content: `❌ Ошибка соединения с сервером. Пожалуйста, попробуйте ещё раз.\n\n${error.message}` 
+            }]);
         } finally {
             setIsLoading(false);
         }
