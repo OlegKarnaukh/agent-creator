@@ -58,7 +58,13 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             // ✅ Проверяем формат ответа Railway
             if (result.status === 'agent_ready' && result.agent_data) {
                 // Агент готов!
-                const { agent_name, business_type, knowledge_base } = result.agent_data;
+                const { 
+                    agent_name, 
+                    business_type, 
+                    description,      // ✅ ДОБАВЛЕНО
+                    instructions,     // ✅ ДОБАВЛЕНО
+                    knowledge_base 
+                } = result.agent_data;
                 const agentId = result.agent_id;
                 
                 console.log('✅ Agent created:', agentId);
@@ -82,16 +88,18 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     content: finalMessage
                 }]);
 
-                // Передаём данные агента в родительский компонент
+                // ✅ ИСПРАВЛЕНО: Передаём description и instructions
                 onAgentUpdate({ 
                     name: agent_name,
                     business_type: business_type,
+                    description: description || business_type,  // ✅ ДОБАВЛЕНО (fallback на business_type)
+                    instructions: instructions || '',           // ✅ ДОБАВЛЕНО
                     knowledge_base: typeof knowledge_base === 'string' 
                         ? knowledge_base 
                         : JSON.stringify(knowledge_base, null, 2),
                     avatar_url: avatarUrl,
                     external_agent_id: agentId,
-                    status: 'draft' // ✅ draft до нажатия "Сохранить"
+                    status: 'draft'
                 });
                 
             } else if (result.response) {
