@@ -1,458 +1,539 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// Components/builder/BuilderChat
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader2 } from 'lucide-react';
-import { sendConstructorMessage } from '@/components/api/constructorApi';
 
-const STORAGE_KEY = 'neuro_seller_constructor_history';
+// ============================================================
+// КОНСТАНТЫ
+// ============================================================
+
+const STORAGE_KEY_PREFIX = 'neuro_seller_conversation_';
 const USER_ID_KEY = 'neuro_seller_user_id';
-const AGENT_DATA_KEY = 'neuro_seller_agent_data';
+const API_BASE = 'https://neuro-seller-production.up.railway.app/api/v1';
 
-export default function BuilderChat({ onAgentUpdate, agentData }) {
-    const [userId, setUserId] = useState(null);
-    const [messages, setMessages] = useState([
+// ============================================================
+// API HELPERS
+// ============================================================
+
+async function sendConstructorMessage(userId, messages, conversationId = null) {
+  const body = {
+    user_id: userId,
+    messages: messages
+  };
+  
+  // Если есть conversation_id → передаём
+  if (conversationId) {
+    body.conversation_id = conversationId;
+  }
+  
+  const response = await fetch(`${API_BASE}/constructor/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  return await response.json();
+}
+
+async function loadConversationHistory(conversationId) {
+  const response = await fetch(`${API_BASE}/constructor/history/${conversationId}`);
+  
+  if (!response.ok) {
+    console.warn(`⚠️ Не удалось загрузить историю conversation ${conversationId}`);
+    return [];
+  }
+  
+  const data = await response.json();
+  return data.messages || [];
+}
+
+// ============================================================
+// УТИЛИТЫ
+// ============================================================
+
+function cleanMarkdown(text) {
+  if (!text) return text;
+  
+  // Удаляем Markdown форматирование, но оставляем жирный текст
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // **bold** → <strong>
+    .replace(/\*(.+?)\*/g, '$1')  // *italic* → обычный текст
+    .replace(/`(.+?)`/g, '$1');   // `code` → обычный текст
+}
+
+function renderMarkdown(text) {
+  const html = cleanMarkdown(text);
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+function getConversationIdFromURL() {
+  // Получаем conversation_id из URL
+  // /constructor → null (новый агент)
+  // /constructor/{conversation_id} → conversation_id
+  
+  const url = new URL(window.location.href);
+  const pathParts = url.pathname.split('/').filter(Boolean);
+  
+  // Если путь /constructor/{id}
+  if (pathParts.length >= 2 && pathParts[0] === 'constructor') {
+    const id = pathParts[1];
+    console.log('🆔 Conversation ID from URL:', id);
+    return id;
+  }
+  
+  console.log('🆔 No conversation ID (new agent)');
+  return null;
+}
+
+// ============================================================
+// ГЛАВНЫЙ КОМПОНЕНТ
+// ============================================================
+
+export default function BuilderChat({ onAgentUpdate }) {
+  const [userId, setUserId] = useState(null);
+  const [conversationId, setConversationId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [agentStatus, setAgentStatus] = useState(null); // draft, test, active
+  
+  const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  // ============================================================
+  // ИНИЦИАЛИЗАЦИЯ
+  // ============================================================
+
+  useEffect(() => {
+    initializeChat();
+  }, []);
+
+  async function initializeChat() {
+    console.log('🔍 Инициализация чата...');
+    
+    // 1. Загружаем userId
+    const uid = await loadUserId();
+    setUserId(uid);
+    
+    // 2. Получаем conversation_id из URL
+    const convId = getConversationIdFromURL();
+    setConversationId(convId);
+    
+    // 3. Загружаем историю
+    if (convId) {
+      await loadHistory(convId, uid);
+    } else {
+      // Новый агент — начальное сообщение
+      setMessages([
         {
-            role: 'assistant',
-            content: 'Здравствуйте! Я помогу создать AI-агента для вашего бизнеса, который будет конвертировать лиды в продажи через переписку.\n\nДля начала расскажите:\n- Какой у вас бизнес?\n- Какие услуги или товары предлагаете?\n- Какие цены?'
-        }
-    ]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const messagesEndRef = useRef(null);
-    const textareaRef = useRef(null);
+          role: 'assistant',
+          content: `Привет! 👋 Я помогу создать вашего AI-агента для продаж.
 
-    // Загружаем или создаём userId
-    useEffect(() => {
-        const loadUser = async () => {
-            try {
-                console.log('🔍 Loading user...');
-                
-                let savedUserId = localStorage.getItem(USER_ID_KEY);
-                
-                if (savedUserId) {
-                    console.log('✅ User ID from localStorage:', savedUserId);
-                    setUserId(savedUserId);
-                    loadHistory(savedUserId);
-                    return;
-                }
-                
-                if (typeof window !== 'undefined' && window.base44) {
-                    const user = await window.base44.auth.me();
-                    console.log('✅ User loaded from Base44:', user);
-                    
-                    if (user?.id) {
-                        setUserId(user.id);
-                        localStorage.setItem(USER_ID_KEY, user.id);
-                        loadHistory(user.id);
-                        return;
-                    }
-                }
-                
-                const tempId = 'temp-user-' + Math.random().toString(36).substr(2, 9);
-                console.log('⚠️ Created temp user ID:', tempId);
-                setUserId(tempId);
-                localStorage.setItem(USER_ID_KEY, tempId);
-                
-            } catch (error) {
-                console.error('❌ Error loading user:', error);
-                const tempId = 'temp-user-' + Math.random().toString(36).substr(2, 9);
-                setUserId(tempId);
-                localStorage.setItem(USER_ID_KEY, tempId);
-            }
-        };
+**Расскажите о вашем бизнесе:**
+• Чем занимаетесь?
+• Что предлагаете и по какой цене?`
+        }
+      ]);
+    }
+  }
+
+  async function loadUserId() {
+    // Пробуем загрузить из localStorage
+    let uid = localStorage.getItem(USER_ID_KEY);
+    
+    if (uid) {
+      console.log('✅ User ID from localStorage:', uid);
+      return uid;
+    }
+    
+    // Пробуем получить из Base44
+    try {
+      if (window.base44 && window.base44.auth) {
+        const user = await window.base44.auth.me();
+        if (user && user.id) {
+          uid = user.id;
+          localStorage.setItem(USER_ID_KEY, uid);
+          console.log('✅ User ID from Base44:', uid);
+          return uid;
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Не удалось загрузить user через Base44:', error);
+    }
+    
+    // Создаём временный ID
+    uid = 'temp-user-' + Date.now();
+    localStorage.setItem(USER_ID_KEY, uid);
+    console.log('⚠️ Создан временный User ID:', uid);
+    
+    return uid;
+  }
+
+  async function loadHistory(convId, uid) {
+    console.log(`📖 Загрузка истории conversation: ${convId}`);
+    
+    try {
+      // Пробуем загрузить с backend
+      const historyMessages = await loadConversationHistory(convId);
+      
+      if (historyMessages.length > 0) {
+        console.log(`✅ История загружена: ${historyMessages.length} сообщений`);
+        setMessages(historyMessages);
+        saveHistoryToStorage(convId, historyMessages);
         
-        loadUser();
-    }, []);
+        // Определяем статус агента из истории
+        detectAgentStatus(historyMessages);
+        return;
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки истории:', error);
+    }
+    
+    // Если не удалось загрузить — пробуем localStorage
+    const storageKey = `${STORAGE_KEY_PREFIX}${convId}`;
+    const stored = localStorage.getItem(storageKey);
+    
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        console.log(`📦 История из localStorage: ${parsed.length} сообщений`);
+        setMessages(parsed);
+        detectAgentStatus(parsed);
+      } catch (error) {
+        console.error('❌ Ошибка парсинга истории:', error);
+      }
+    }
+  }
 
-    // Загрузка истории
-    const loadHistory = async (uid) => {
-        try {
-            const storageKey = `${STORAGE_KEY}_${uid}`;
-            const saved = localStorage.getItem(storageKey);
-            
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                console.log('✅ History from localStorage:', parsed.length);
-                setMessages(parsed);
-                
-                // Восстанавливаем данные агента
-                await restoreAgentFromHistory(parsed, uid);
-                return;
-            }
-            
-            const response = await fetch(
-                `https://neuro-seller-production.up.railway.app/api/v1/constructor/history/${uid}`
-            );
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.messages?.length > 0) {
-                    console.log('✅ History from Backend:', data.messages.length);
-                    setMessages(data.messages);
-                    saveHistory(data.messages, uid);
-                    
-                    // Восстанавливаем данные агента
-                    await restoreAgentFromHistory(data.messages, uid);
-                }
-            }
-        } catch (error) {
-            console.error('❌ Error loading history:', error);
+  function detectAgentStatus(msgs) {
+    // Определяем статус агента из истории
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const msg = msgs[i];
+      if (msg.role === 'assistant') {
+        if (msg.content.includes('🎉 Агент создан')) {
+          setAgentStatus('test');
+          return;
         }
-    };
-
-    // 🔥 ОБНОВЛЕНО: Восстановление агента из истории
-    const restoreAgentFromHistory = async (msgs, uid) => {
-        try {
-            // 1. Проверяем localStorage
-            const agentStorageKey = `${AGENT_DATA_KEY}_${uid}`;
-            const savedAgentData = localStorage.getItem(agentStorageKey);
-            
-            if (savedAgentData) {
-                const agentData = JSON.parse(savedAgentData);
-                console.log('✅ Restored agent from localStorage:', agentData);
-                onAgentUpdate(agentData);
-                return;
-            }
-            
-            // 2. Ищем в истории сообщение о создании агента
-            const agentMessages = msgs.filter(msg => 
-                msg.role === 'assistant' && 
-                (msg.content.includes('🎉 Агент "') || msg.content.includes('✅ Агент "'))
-            );
-            
-            if (agentMessages.length === 0) {
-                console.log('ℹ️ No agent created yet');
-                return;
-            }
-            
-            // 3. Извлекаем имя агента из последнего сообщения
-            const lastAgentMessage = agentMessages[agentMessages.length - 1];
-            const agentNameMatch = lastAgentMessage.content.match(/Агент "(.+?)"/);
-            
-            if (!agentNameMatch) {
-                console.warn('⚠️ Could not extract agent name from message');
-                return;
-            }
-            
-            const agentName = agentNameMatch[1];
-            console.log('🔍 Found agent in history:', agentName);
-            
-            // 4. Запрашиваем данные агента из Backend
-            try {
-                const response = await fetch(
-                    `https://neuro-seller-production.up.railway.app/api/v1/constructor/chat`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_id: uid,
-                            messages: msgs
-                        })
-                    }
-                );
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    // Если есть agent_data в ответе, восстанавливаем агента
-                    if (data.agent_data) {
-                        console.log('✅ Agent data retrieved from Backend');
-                        
-                        const { agent_name, business_type, description, instructions, knowledge_base } = data.agent_data;
-                        
-                        const isFemale = agent_name.toLowerCase().includes('виктори');
-                        const avatarUrl = isFemale
-                            ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
-                            : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
-                        
-                        const agentUpdateData = {
-                            name: agent_name,
-                            business_type: business_type,
-                            description: description || business_type,
-                            instructions: instructions || '',
-                            knowledge_base: typeof knowledge_base === 'string' ? knowledge_base : JSON.stringify(knowledge_base, null, 2),
-                            avatar_url: avatarUrl,
-                            external_agent_id: data.agent_id,
-                            status: 'draft'
-                        };
-                        
-                        // Сохраняем для будущих сессий
-                        saveAgentData(agentUpdateData, uid);
-                        
-                        // Передаём родителю
-                        onAgentUpdate(agentUpdateData);
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Error fetching agent from Backend:', error);
-            }
-            
-        } catch (error) {
-            console.error('❌ Error restoring agent:', error);
+        if (msg.content.includes('✅ Агент обновлён')) {
+          setAgentStatus('test');
+          return;
         }
-    };
+      }
+    }
+    
+    // Если не нашли — draft
+    setAgentStatus('draft');
+  }
 
-    // Сохранение истории
-    const saveHistory = (msgs, uid = userId) => {
-        if (!uid) return;
-        try {
-            const storageKey = `${STORAGE_KEY}_${uid}`;
-            localStorage.setItem(storageKey, JSON.stringify(msgs));
-            console.log('💾 History saved');
-        } catch (error) {
-            console.error('❌ Error saving history:', error);
-        }
-    };
+  function saveHistoryToStorage(convId, msgs) {
+    if (!convId) return;
+    
+    const storageKey = `${STORAGE_KEY_PREFIX}${convId}`;
+    localStorage.setItem(storageKey, JSON.stringify(msgs));
+  }
 
-    // Сохранение данных агента
-    const saveAgentData = (agentData, uid = userId) => {
-        if (!uid) return;
-        try {
-            const agentStorageKey = `${AGENT_DATA_KEY}_${uid}`;
-            localStorage.setItem(agentStorageKey, JSON.stringify(agentData));
-            console.log('💾 Agent data saved');
-        } catch (error) {
-            console.error('❌ Error saving agent data:', error);
-        }
-    };
+  // ============================================================
+  // ОТПРАВКА СООБЩЕНИЯ
+  // ============================================================
 
-    // Рендеринг Markdown (только bold)
-    const renderMarkdown = (text) => {
-        const parts = [];
-        let lastIndex = 0;
-        const regex = /\*\*(.+?)\*\*/g;
-        let match;
-
-        while ((match = regex.exec(text)) !== null) {
-            if (match.index > lastIndex) {
-                parts.push({
-                    type: 'text',
-                    content: text.substring(lastIndex, match.index)
-                });
-            }
-            
-            parts.push({
-                type: 'bold',
-                content: match[1]
-            });
-            
-            lastIndex = regex.lastIndex;
-        }
+  async function handleSendMessage(e) {
+    e?.preventDefault();
+    
+    if (!inputValue.trim() || isLoading || !userId) return;
+    
+    const userMessage = inputValue.trim();
+    setInputValue('');
+    
+    // Добавляем сообщение пользователя
+    const updatedMessages = [
+      ...messages,
+      { role: 'user', content: userMessage }
+    ];
+    setMessages(updatedMessages);
+    
+    setIsLoading(true);
+    
+    try {
+      console.log('📤 Отправка сообщения...', { userId, conversationId });
+      
+      const result = await sendConstructorMessage(userId, updatedMessages, conversationId);
+      
+      console.log('📥 Ответ от Backend:', result);
+      
+      // Если получили новый conversation_id (первое сообщение)
+      if (result.conversation_id && !conversationId) {
+        const newConvId = result.conversation_id;
+        setConversationId(newConvId);
         
-        if (lastIndex < text.length) {
-            parts.push({
-                type: 'text',
-                content: text.substring(lastIndex)
-            });
-        }
-        
-        return parts;
+        // Обновляем URL
+        window.history.replaceState({}, '', `/constructor/${newConvId}`);
+        console.log('🔗 URL обновлён:', `/constructor/${newConvId}`);
+      }
+      
+      // Обработка ответа
+      if (result.status === 'agent_ready' && result.agent_data) {
+        // Агент создан (draft → test)
+        handleAgentReady(result, updatedMessages);
+      } else if (result.status === 'agent_updated' && result.agent_data) {
+        // Агент обновлён
+        handleAgentUpdated(result, updatedMessages);
+      } else {
+        // Обычный ответ
+        const finalMessages = [
+          ...updatedMessages,
+          { role: 'assistant', content: result.response }
+        ];
+        setMessages(finalMessages);
+        saveHistoryToStorage(conversationId || result.conversation_id, finalMessages);
+      }
+      
+    } catch (error) {
+      console.error('❌ Ошибка отправки:', error);
+      const errorMessages = [
+        ...updatedMessages,
+        { role: 'assistant', content: '❌ Ошибка отправки сообщения. Попробуйте ещё раз.' }
+      ];
+      setMessages(errorMessages);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleAgentReady(result, updatedMessages) {
+    const agent_data = result.agent_data;
+    
+    // Определяем аватарку
+    const avatarUrl = agent_data.agent_name.toLowerCase().includes('виктори')
+      ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=Victoria&backgroundColor=b6e3f4'
+      : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alexander&backgroundColor=c0aede';
+    
+    // Сообщение в чат
+    const successMessage = {
+      role: 'assistant',
+      content: `🎉 **Агент создан и готов к тестированию!**
+
+Ваш агент **${agent_data.agent_name}** готов к работе.
+Протестируйте его в разделе "Предпросмотр" →
+
+Если хотите что-то изменить — просто напишите мне!`
     };
+    
+    const finalMessages = [...updatedMessages, successMessage];
+    setMessages(finalMessages);
+    saveHistoryToStorage(conversationId || result.conversation_id, finalMessages);
+    
+    // Обновляем статус
+    setAgentStatus('test');
+    
+    // Передаём данные агента в родительский компонент
+    if (onAgentUpdate) {
+      onAgentUpdate({
+        name: agent_data.agent_name,
+        business_type: agent_data.business_type,
+        description: agent_data.description,
+        instructions: agent_data.instructions,
+        knowledge_base: agent_data.knowledge_base,
+        avatar_url: avatarUrl,
+        external_agent_id: result.agent_id,
+        status: 'test'
+      });
+    }
+  }
 
-    // Отправка сообщения
-    const handleSendMessage = async () => {
-        if (!input.trim() || !userId || isLoading) return;
-
-        console.log('📤 Sending message...');
-        
-        const userMessage = { role: 'user', content: input.trim() };
-        const updatedMessages = [...messages, userMessage];
-        
-        setMessages(updatedMessages);
-        setInput('');
-        setIsLoading(true);
-
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-        }
-
-        try {
-            const result = await sendConstructorMessage(userId, updatedMessages);
-            console.log('📥 Response:', result);
-            
-            // СОЗДАНИЕ агента
-            if (result.status === 'agent_ready' && result.agent_data) {
-                console.log('✅ Agent created:', result.agent_id);
-                
-                const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
-                
-                const isFemale = agent_name.toLowerCase().includes('виктори');
-                const avatarUrl = isFemale
-                    ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
-                    : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
-                
-                const finalMessage = {
-                    role: 'assistant',
-                    content: `🎉 Агент "${agent_name}" создан!\n\n1️⃣ Протестируй справа\n2️⃣ Нажми "Сохранить"\n3️⃣ Настрой каналы`
-                };
-                
-                const finalMessages = [...updatedMessages, finalMessage];
-                setMessages(finalMessages);
-                saveHistory(finalMessages);
-                
-                const agentUpdateData = {
-                    name: agent_name,
-                    business_type: business_type,
-                    description: description || business_type,
-                    instructions: instructions || '',
-                    knowledge_base: typeof knowledge_base === 'string' ? knowledge_base : JSON.stringify(knowledge_base, null, 2),
-                    avatar_url: avatarUrl,
-                    external_agent_id: result.agent_id,
-                    status: 'draft'
-                };
-                
-                saveAgentData(agentUpdateData);
-                onAgentUpdate(agentUpdateData);
-            }
-            // ОБНОВЛЕНИЕ агента
-            else if (result.status === 'agent_updated' && result.agent_data) {
-                console.log('✅ Agent updated:', result.agent_id);
-                
-                const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
-                
-                const isFemale = agent_name.toLowerCase().includes('виктори');
-                const avatarUrl = isFemale
-                    ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
-                    : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
-                
-                const updateMessage = {
-                    role: 'assistant',
-                    content: `✅ Агент "${agent_name}" обновлён!`
-                };
-                
-                const finalMessages = [...updatedMessages, updateMessage];
-                setMessages(finalMessages);
-                saveHistory(finalMessages);
-                
-                const agentUpdateData = {
-                    name: agent_name,
-                    business_type: business_type,
-                    description: description || business_type,
-                    instructions: instructions || '',
-                    knowledge_base: typeof knowledge_base === 'string' ? knowledge_base : JSON.stringify(knowledge_base, null, 2),
-                    avatar_url: avatarUrl,
-                    external_agent_id: result.agent_id,
-                    status: 'draft'
-                };
-                
-                saveAgentData(agentUpdateData);
-                onAgentUpdate(agentUpdateData);
-            }
-            // Обычный ответ
-            else if (result.response) {
-                const assistantMessage = { role: 'assistant', content: result.response };
-                const finalMessages = [...updatedMessages, assistantMessage];
-                setMessages(finalMessages);
-                saveHistory(finalMessages);
-            }
-            
-        } catch (error) {
-            console.error('❌ Error:', error);
-            const errorMessage = { 
-                role: 'assistant', 
-                content: `❌ Ошибка: ${error.message}` 
-            };
-            setMessages([...updatedMessages, errorMessage]);
-        } finally {
-            setIsLoading(false);
-        }
+  function handleAgentUpdated(result, updatedMessages) {
+    const agent_data = result.agent_data;
+    
+    // Определяем аватарку
+    const avatarUrl = agent_data.agent_name.toLowerCase().includes('виктори')
+      ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=Victoria&backgroundColor=b6e3f4'
+      : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alexander&backgroundColor=c0aede';
+    
+    // Сообщение в чат
+    const successMessage = {
+      role: 'assistant',
+      content: '✅ **Агент обновлён!** Изменения сразу применены.'
     };
+    
+    const finalMessages = [...updatedMessages, successMessage];
+    setMessages(finalMessages);
+    saveHistoryToStorage(conversationId || result.conversation_id, finalMessages);
+    
+    // Передаём обновлённые данные
+    if (onAgentUpdate) {
+      onAgentUpdate({
+        name: agent_data.agent_name,
+        business_type: agent_data.business_type,
+        description: agent_data.description,
+        instructions: agent_data.instructions,
+        knowledge_base: agent_data.knowledge_base,
+        avatar_url: avatarUrl,
+        external_agent_id: result.agent_id,
+        status: 'test'
+      });
+    }
+  }
 
-    // Автоматическая подстройка высоты textarea
-    const handleInputChange = (e) => {
-        setInput(e.target.value);
-        
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-        }
-    };
+  // ============================================================
+  // UI HANDLERS
+  // ============================================================
 
-    // Обработка Enter и Shift+Enter
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage();
-        }
-    };
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
+    }
+  }
 
-    // Автоскролл
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+  useEffect(() => {
+    // Автоскролл вниз
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-    return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800">
-            <ScrollArea className="flex-1 p-6">
-                <div className="space-y-4">
-                    {messages.map((message, index) => (
-                        <div 
-                            key={index} 
-                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div 
-                                className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                                    message.role === 'user' 
-                                        ? 'bg-blue-600 text-white' 
-                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                                }`}
-                            >
-                                <div className="text-sm whitespace-pre-wrap">
-                                    {message.content.split('\n').map((line, lineIndex) => (
-                                        <React.Fragment key={lineIndex}>
-                                            {renderMarkdown(line).map((part, partIndex) => (
-                                                part.type === 'bold' ? (
-                                                    <strong key={partIndex}>{part.content}</strong>
-                                                ) : (
-                                                    <span key={partIndex}>{part.content}</span>
-                                                )
-                                            ))}
-                                            {lineIndex < message.content.split('\n').length - 1 && <br />}
-                                        </React.Fragment>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                    {isLoading && (
-                        <div className="flex justify-start">
-                            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-3 flex items-center gap-2">
-                                <Loader2 className="h-5 w-5 animate-spin text-gray-600 dark:text-gray-400" />
-                                <span className="text-sm text-gray-600 dark:text-gray-400">Думаю...</span>
-                            </div>
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                </div>
-            </ScrollArea>
+  useEffect(() => {
+    // Автоматическое растяжение textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [inputValue]);
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-                <div className="flex items-end gap-2">
-                    <Textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Расскажите о своём бизнесе... (Shift+Enter для новой строки)"
-                        disabled={isLoading || !userId}
-                        className="flex-1 min-h-[44px] max-h-[200px] resize-none"
-                        rows={1}
-                    />
+  // ============================================================
+  // RENDER
+  // ============================================================
 
-                    <Button 
-                        onClick={handleSendMessage} 
-                        disabled={isLoading || !input.trim() || !userId}
-                        className="shrink-0"
-                    >
-                        {isLoading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                            <Send className="h-5 w-5" />
-                        )}
-                    </Button>
-                </div>
-            </div>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Статус агента */}
+      {agentStatus && (
+        <div style={{
+          padding: '12px 20px',
+          backgroundColor: agentStatus === 'draft' ? '#fef3c7' : '#dbeafe',
+          borderBottom: '1px solid #e5e7eb',
+          fontSize: '14px',
+          color: '#374151'
+        }}>
+          {agentStatus === 'draft' && '🟡 Агент в разработке...'}
+          {agentStatus === 'test' && '🔵 Агент готов к тестированию'}
+          {agentStatus === 'active' && '🟢 Агент активен'}
         </div>
-    );
+      )}
+      
+      {/* Список сообщений */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '20px',
+        backgroundColor: '#f9fafb'
+      }}>
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            style={{
+              display: 'flex',
+              justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              marginBottom: '16px'
+            }}
+          >
+            <div
+              style={{
+                maxWidth: '70%',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                backgroundColor: msg.role === 'user' ? '#3b82f6' : '#ffffff',
+                color: msg.role === 'user' ? '#ffffff' : '#111827',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
+              }}
+            >
+              {renderMarkdown(msg.content)}
+            </div>
+          </div>
+        ))}
+        
+        {/* Индикатор загрузки */}
+        {isLoading && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6b7280' }}>
+            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+            <span>Думаю...</span>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
+      
+      {/* Форма ввода */}
+      <form
+        onSubmit={handleSendMessage}
+        style={{
+          padding: '20px',
+          borderTop: '1px solid #e5e7eb',
+          backgroundColor: '#ffffff'
+        }}
+      >
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+          <textarea
+            ref={textareaRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Напишите сообщение... (Enter — отправить, Shift+Enter — новая строка)"
+            disabled={isLoading || !userId}
+            style={{
+              flex: 1,
+              minHeight: '44px',
+              maxHeight: '200px',
+              padding: '12px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontSize: '14px',
+              resize: 'none',
+              outline: 'none',
+              fontFamily: 'inherit'
+            }}
+          />
+          
+          <button
+            type="submit"
+            disabled={isLoading || !inputValue.trim() || !userId}
+            style={{
+              padding: '12px 20px',
+              backgroundColor: isLoading || !inputValue.trim() ? '#d1d5db' : '#3b82f6',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: isLoading || !inputValue.trim() ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            {isLoading ? (
+              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <Send size={18} />
+            )}
+          </button>
+        </div>
+        
+        {/* Дебаг информация */}
+        <div style={{ marginTop: '8px', fontSize: '12px', color: '#9ca3af' }}>
+          User ID: {userId || 'загрузка...'} | Conversation: {conversationId || 'новый'}
+        </div>
+      </form>
+      
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
 }
