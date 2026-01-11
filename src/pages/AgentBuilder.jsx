@@ -17,6 +17,12 @@ export default function AgentBuilder() {
     const [activeTab, setActiveTab] = useState('create');
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [messages, setMessages] = useState([
+        {
+            role: 'assistant',
+            content: 'Привет! Я помогу создать вашего персонального AI-агента. Для начала расскажите, какой у вас бизнес и чем занимается ваша компания?'
+        }
+    ]);
     const [agentData, setAgentData] = useState({
         name: '',
         avatar_url: '',
@@ -149,12 +155,14 @@ export default function AgentBuilder() {
                             className="flex-1 overflow-hidden"
                         >
                             {activeTab === 'create' ? (
-                                <BuilderChat 
+                                <BuilderChat
                                     onAgentUpdate={handleAgentUpdate}
                                     agentData={agentData}
+                                    messages={messages}
+                                    setMessages={setMessages}
                                 />
                             ) : (
-                                <ConfigurePanel 
+                                <ConfigurePanel
                                     agentData={agentData}
                                     onAgentUpdate={handleAgentUpdate}
                                 />

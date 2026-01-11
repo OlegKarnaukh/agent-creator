@@ -6,14 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from '@/api/base44Client';
 import { sendConstructorMessage } from '@/components/api/constructorApi';
 
-export default function BuilderChat({ onAgentUpdate, agentData }) {
+export default function BuilderChat({ onAgentUpdate, agentData, messages, setMessages }) {
     const [userId, setUserId] = useState(null);
-    const [messages, setMessages] = useState([
-        {
-            role: 'assistant',
-            content: 'Привет! Я помогу создать вашего персонального AI-агента. Для начала расскажите, какой у вас бизнес и чем занимается ваша компания?'
-        }
-    ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
@@ -64,20 +58,25 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             if (result.status === 'agent_ready' && result.agent_data) {
                 const { agent_name, business_type, knowledge_base } = result.agent_data;
                 const agentId = result.agent_id;
-                
-                const isFemale = agent_name.toLowerCase().includes('виктори') || 
-                                 agent_name.toLowerCase().includes('анна') || 
+
+                const isFemale = agent_name.toLowerCase().includes('виктори') ||
+                                 agent_name.toLowerCase().includes('анна') ||
                                  agent_name.toLowerCase().includes('мария') ||
                                  agent_name.toLowerCase().includes('елена');
-                
+
                 const avatarUrl = isFemale
                     ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
                     : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
 
-                onAgentUpdate({ 
+                // Конвертируем knowledge_base объект в JSON строку для текстового поля
+                const knowledgeBaseStr = typeof knowledge_base === 'object'
+                    ? JSON.stringify(knowledge_base, null, 2)
+                    : knowledge_base;
+
+                onAgentUpdate({
                     name: agent_name,
                     business_type: business_type,
-                    knowledge_base: knowledge_base,
+                    knowledge_base: knowledgeBaseStr,
                     avatar_url: avatarUrl,
                     external_agent_id: agentId,
                     status: 'active'
