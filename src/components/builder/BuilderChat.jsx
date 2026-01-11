@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2 } from 'lucide-react';
 import { sendConstructorMessage } from '@/components/api/constructorApi';
 
 const STORAGE_KEY = 'neuro_seller_constructor_history';
+const USER_ID_KEY = 'neuro_seller_user_id'; // 🔑 Ключ для userId
 
 export default function BuilderChat({ onAgentUpdate, agentData }) {
     const [userId, setUserId] = useState(null);
@@ -18,35 +19,48 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
+    const textareaRef = useRef(null);
 
-    // Загружаем userId при монтировании
+    // Загружаем или создаём userId
     useEffect(() => {
         const loadUser = async () => {
             try {
                 console.log('🔍 Loading user...');
                 
-                // Используем window.base44 для доступа к API
+                // Проверяем localStorage
+                let savedUserId = localStorage.getItem(USER_ID_KEY);
+                
+                if (savedUserId) {
+                    console.log('✅ User ID from localStorage:', savedUserId);
+                    setUserId(savedUserId);
+                    loadHistory(savedUserId);
+                    return;
+                }
+                
+                // Пытаемся загрузить из Base44
                 if (typeof window !== 'undefined' && window.base44) {
                     const user = await window.base44.auth.me();
-                    console.log('✅ User loaded:', user);
+                    console.log('✅ User loaded from Base44:', user);
                     
                     if (user?.id) {
                         setUserId(user.id);
+                        localStorage.setItem(USER_ID_KEY, user.id);
                         loadHistory(user.id);
-                    } else {
-                        console.error('❌ User ID not found');
-                        // Используем временный ID как fallback
-                        setUserId('temp-user-' + Date.now());
+                        return;
                     }
-                } else {
-                    console.error('❌ window.base44 not found');
-                    // Используем временный ID как fallback
-                    setUserId('temp-user-' + Date.now());
                 }
+                
+                // Fallback: создаём стабильный временный ID
+                const tempId = 'temp-user-' + Math.random().toString(36).substr(2, 9);
+                console.log('⚠️ Created temp user ID:', tempId);
+                setUserId(tempId);
+                localStorage.setItem(USER_ID_KEY, tempId);
+                
             } catch (error) {
                 console.error('❌ Error loading user:', error);
-                // Используем временный ID как fallback
-                setUserId('temp-user-' + Date.now());
+                const tempId = 'temp-user-' + Math.random().toString(36).substr(2, 9);
+                setUserId(tempId);
+                localStorage.setItem(USER_ID_KEY, tempId);
             }
         };
         
@@ -95,6 +109,14 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         }
     };
 
+    // Очистка Markdown форматирования
+    const cleanMarkdown = (text) => {
+        return text
+            .replace(/\*\*(.+?)\*\*/g, '$1') // **текст** → текст
+            .replace(/\*(.+?)\*/g, '$1')     // *текст* → текст
+            .replace(/`(.+?)`/g, '$1');      // `код` → код
+    };
+
     // Отправка сообщения
     const handleSendMessage = async () => {
         if (!input.trim() || !userId || isLoading) return;
@@ -107,6 +129,11 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
+
+        // Сброс высоты textarea
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+        }
 
         try {
             const result = await sendConstructorMessage(userId, updatedMessages);
@@ -176,7 +203,10 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             }
             // Обычный ответ
             else if (result.response) {
-                const assistantMessage = { role: 'assistant', content: result.response };
+                // Очищаем Markdown форматирование
+                const cleanedResponse = cleanMarkdown(result.response);
+                
+                const assistantMessage = { role: 'assistant', content: cleanedResponse };
                 const finalMessages = [...updatedMessages, assistantMessage];
                 setMessages(finalMessages);
                 saveHistory(finalMessages);
@@ -192,6 +222,26 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // Автоматическая подстройка высоты textarea
+    const handleInputChange = (e) => {
+        setInput(e.target.value);
+        
+        // Автоматически подстраиваем высоту
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    };
+
+    // Обработка Enter и Shift+Enter
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
+        }
+        // Shift+Enter → новая строка (по умолчанию работает)
     };
 
     // Автоскролл
@@ -232,23 +282,21 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
 
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <div className="flex items-end gap-2">
-                    <Input
+                    <Textarea
+                        ref={textareaRef}
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage();
-                            }
-                        }}
-                        placeholder="Расскажите о своём бизнесе..."
+                        onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Расскажите о своём бизнесе... (Shift+Enter для новой строки)"
                         disabled={isLoading || !userId}
-                        className="flex-1"
+                        className="flex-1 min-h-[44px] max-h-[200px] resize-none"
+                        rows={1}
                     />
 
                     <Button 
                         onClick={handleSendMessage} 
                         disabled={isLoading || !input.trim() || !userId}
+                        className="shrink-0"
                     >
                         {isLoading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
