@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Upload, MessageSquare, Phone, Globe, Send } from "lucide-react";
+import { Upload, MessageSquare, Phone, Globe, Send, User, Loader2 } from "lucide-react";
+
+// ✅ Статические аватарки по умолчанию
+const DEFAULT_AVATAR_VICTORIA = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Victoria&style=circle&backgroundColor=fef3c7&hair=longHair&hairColor=auburn&accessories=prescription02&clothingColor=3c4f5c&top=longHairStraight&accessoriesColor=262e33&facialHairColor=auburn&clothesColor=262e33&graphicType=skull&eyeType=happy&eyebrowType=default&mouthType=smile&skinColor=light';
+
+const DEFAULT_AVATAR_ALEXANDER = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alexander&style=circle&backgroundColor=c0aede&hair=shortHairShortWaved&hairColor=brown&accessories=prescription01&clothingColor=black&top=shortHairShortWaved&accessoriesColor=262e33&facialHairColor=black&clothesColor=heather&graphicType=bat&eyeType=default&eyebrowType=default&mouthType=default&skinColor=light';
 
 export default function ConfigurePanel({ agentData, onAgentUpdate }) {
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    
     const channels = [
         { id: 'telegram', name: 'Telegram', icon: Send, color: 'bg-blue-500' },
         { id: 'whatsapp', name: 'WhatsApp', icon: MessageSquare, color: 'bg-green-500' },
@@ -30,6 +37,60 @@ export default function ConfigurePanel({ agentData, onAgentUpdate }) {
     const isChannelEnabled = (channelId) => {
         return agentData.channels?.some(c => c.type === channelId && c.enabled);
     };
+    
+    // ✅ Обработчик загрузки аватарки
+    const handleAvatarUpload = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        
+        // Проверка типа файла
+        if (!file.type.startsWith('image/')) {
+            alert('Пожалуйста, выберите изображение');
+            return;
+        }
+        
+        // Проверка размера (макс 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Размер файла не должен превышать 2 МБ');
+            return;
+        }
+        
+        setIsUploadingAvatar(true);
+        
+        try {
+            // Вариант 1: Загрузка через Base44 Media Library
+            if (window.base44 && window.base44.media) {
+                const uploadedFile = await window.base44.media.upload(file);
+                onAgentUpdate({ avatar_url: uploadedFile.url });
+            } 
+            // Вариант 2: Преобразование в Base64 (для простоты)
+            else {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    onAgentUpdate({ avatar_url: reader.result });
+                };
+                reader.readAsDataURL(file);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки аватарки:', error);
+            alert('Не удалось загрузить изображение. Попробуйте ещё раз.');
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
+    
+    // ✅ Сброс на аватарку по умолчанию
+    const handleResetAvatar = () => {
+        const defaultAvatar = agentData.name?.toLowerCase().includes('виктори')
+            ? DEFAULT_AVATAR_VICTORIA
+            : DEFAULT_AVATAR_ALEXANDER;
+        onAgentUpdate({ avatar_url: defaultAvatar });
+    };
+    
+    // ✅ Преобразование knowledge_base для отображения
+    const knowledgeBaseDisplay = typeof agentData.knowledge_base === 'object'
+        ? JSON.stringify(agentData.knowledge_base, null, 2)
+        : agentData.knowledge_base || '';
 
     return (
         <div className="p-6 space-y-8 overflow-y-auto h-full">
@@ -39,16 +100,41 @@ export default function ConfigurePanel({ agentData, onAgentUpdate }) {
                 
                 <div className="flex items-center gap-4">
                     <div className="relative">
-                        <div className="w-20 h-20 rounded-2xl bg-slate-100 overflow-hidden">
+                        <div className="w-20 h-20 rounded-2xl bg-slate-100 overflow-hidden border-2 border-slate-200">
                             {agentData.avatar_url ? (
-                                <img src={agentData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                                <img 
+                                    src={agentData.avatar_url} 
+                                    alt="Avatar" 
+                                    className="w-full h-full object-cover" 
+                                />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                    <Upload className="w-6 h-6 text-slate-400" />
+                                    <User className="w-6 h-6 text-slate-400" />
                                 </div>
                             )}
                         </div>
+                        
+                        {/* Кнопка загрузки */}
+                        <label
+                            htmlFor="avatar-upload"
+                            className="absolute -bottom-2 -right-2 w-8 h-8 bg-slate-900 hover:bg-slate-800 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-colors"
+                        >
+                            {isUploadingAvatar ? (
+                                <Loader2 className="w-4 h-4 text-white animate-spin" />
+                            ) : (
+                                <Upload className="w-4 h-4 text-white" />
+                            )}
+                        </label>
+                        <input
+                            id="avatar-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            disabled={isUploadingAvatar}
+                            className="hidden"
+                        />
                     </div>
+                    
                     <div className="flex-1 space-y-2">
                         <Label className="text-xs text-slate-500">Имя агента</Label>
                         <Input
@@ -57,6 +143,16 @@ export default function ConfigurePanel({ agentData, onAgentUpdate }) {
                             placeholder="Виктория"
                             className="h-10"
                         />
+                        {agentData.avatar_url && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleResetAvatar}
+                                className="text-xs text-slate-500 hover:text-slate-700"
+                            >
+                                Сбросить на аватарку по умолчанию
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -114,8 +210,18 @@ export default function ConfigurePanel({ agentData, onAgentUpdate }) {
             <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">База знаний</h3>
                 <Textarea
-                    value={agentData.knowledge_base || ''}
-                    onChange={(e) => onAgentUpdate({ knowledge_base: e.target.value })}
+                    value={knowledgeBaseDisplay}
+                    onChange={(e) => {
+                        // ✅ Пробуем распарсить как JSON, если не получается — сохраняем как строку
+                        const value = e.target.value;
+                        try {
+                            const parsed = JSON.parse(value);
+                            onAgentUpdate({ knowledge_base: parsed });
+                        } catch (error) {
+                            // Если не JSON — сохраняем как строку
+                            onAgentUpdate({ knowledge_base: value });
+                        }
+                    }}
                     placeholder="Добавьте информацию о компании, услугах, ценах..."
                     className="min-h-[150px] resize-none text-sm"
                 />
@@ -123,6 +229,9 @@ export default function ConfigurePanel({ agentData, onAgentUpdate }) {
                     <Upload className="w-4 h-4 mr-2" />
                     Загрузить файлы
                 </Button>
+                <p className="text-xs text-slate-400">
+                    Можно вводить текст или JSON-объект (автоматически определяется)
+                </p>
             </div>
         </div>
     );
