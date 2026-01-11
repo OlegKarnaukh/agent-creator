@@ -4,18 +4,26 @@ const BASE_URL = 'https://neuro-seller-production.up.railway.app';
  * Отправка сообщения в чат конструктора
  * @param {string} userId - ID пользователя
  * @param {Array} messages - Массив сообщений [{role: 'user', content: '...'}, ...]
- * @returns {Promise<{response?: string, status?: string, agent_id?: string, agent_data?: object}>}
+ * @param {string|null} conversationId - ID беседы (для продолжения диалога)
+ * @returns {Promise<{response?: string, status?: string, agent_id?: string, agent_data?: object, conversation_id?: string}>}
  */
-export async function sendConstructorMessage(userId, messages) {
+export async function sendConstructorMessage(userId, messages, conversationId = null) {
+    const body = {
+        user_id: userId,
+        messages: messages  // Формат: [{role: 'user', content: 'текст'}, ...]
+    };
+
+    // Добавляем conversation_id только если он есть
+    if (conversationId) {
+        body.conversation_id = conversationId;
+    }
+
     const response = await fetch(`${BASE_URL}/api/v1/constructor/chat`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            user_id: userId,
-            messages: messages  // Формат: [{role: 'user', content: 'текст'}, ...]
-        })
+        body: JSON.stringify(body)
     });
 
     if (!response.ok) {
@@ -23,11 +31,11 @@ export async function sendConstructorMessage(userId, messages) {
     }
 
     const data = await response.json();
-    
+
     // Railway может вернуть либо обычный ответ, либо agent_ready
-    // Обычный ответ: { response: "..." }
-    // Агент готов: { status: "agent_ready", agent_id: "...", agent_data: {...} }
-    
+    // Обычный ответ: { response: "...", conversation_id: "..." }
+    // Агент готов: { status: "agent_ready", agent_id: "...", agent_data: {...}, conversation_id: "..." }
+
     return data;
 }
 

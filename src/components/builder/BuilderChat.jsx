@@ -8,6 +8,7 @@ import { sendConstructorMessage } from '@/components/api/constructorApi';
 
 // Простой markdown парсер для форматирования текста
 function parseMarkdown(text) {
+    if (!text) return '';
     return text
         // Жирный текст: **text** или __text__
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -21,6 +22,7 @@ function parseMarkdown(text) {
 
 export default function BuilderChat({ onAgentUpdate, agentData, messages, setMessages }) {
     const [userId, setUserId] = useState(null);
+    const [conversationId, setConversationId] = useState(null);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
@@ -60,12 +62,17 @@ export default function BuilderChat({ onAgentUpdate, agentData, messages, setMes
                 role: m.role,
                 content: m.content
             }));
-            
-            const result = await sendConstructorMessage(userId, messagesForApi);
-            
-            setMessages(prev => [...prev, { 
-                role: 'assistant', 
-                content: result.response 
+
+            const result = await sendConstructorMessage(userId, messagesForApi, conversationId);
+
+            // Сохраняем conversation_id из первого ответа
+            if (result.conversation_id && !conversationId) {
+                setConversationId(result.conversation_id);
+            }
+
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: result.response
             }]);
 
             if (result.status === 'agent_ready' && result.agent_data) {
