@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2, Paperclip } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { sendConstructorMessage } from '@/components/api/constructorApi';
 
 const STORAGE_KEY = 'neuro_seller_constructor_history';
@@ -19,22 +19,37 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
-    // Загружаем userId
+    // Загружаем userId при монтировании
     useEffect(() => {
         const loadUser = async () => {
             try {
-                const user = await base44.auth.me();
-                console.log('✅ User loaded:', user);
-                if (user?.id) {
-                    setUserId(user.id);
-                    loadHistory(user.id);
+                console.log('🔍 Loading user...');
+                
+                // Используем window.base44 для доступа к API
+                if (typeof window !== 'undefined' && window.base44) {
+                    const user = await window.base44.auth.me();
+                    console.log('✅ User loaded:', user);
+                    
+                    if (user?.id) {
+                        setUserId(user.id);
+                        loadHistory(user.id);
+                    } else {
+                        console.error('❌ User ID not found');
+                        // Используем временный ID как fallback
+                        setUserId('temp-user-' + Date.now());
+                    }
                 } else {
-                    console.error('❌ User ID not found');
+                    console.error('❌ window.base44 not found');
+                    // Используем временный ID как fallback
+                    setUserId('temp-user-' + Date.now());
                 }
             } catch (error) {
                 console.error('❌ Error loading user:', error);
+                // Используем временный ID как fallback
+                setUserId('temp-user-' + Date.now());
             }
         };
+        
         loadUser();
     }, []);
 
@@ -51,7 +66,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 return;
             }
             
-            // Загрузка из Backend
             const response = await fetch(
                 `https://neuro-seller-production.up.railway.app/api/v1/constructor/history/${uid}`
             );
@@ -83,43 +97,24 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
 
     // Отправка сообщения
     const handleSendMessage = async () => {
-        console.log('📤 handleSendMessage called');
-        console.log('   input:', input);
-        console.log('   userId:', userId);
-        console.log('   isLoading:', isLoading);
+        if (!input.trim() || !userId || isLoading) return;
 
-        if (!input.trim()) {
-            console.log('❌ Input is empty');
-            return;
-        }
-
-        if (!userId) {
-            console.error('❌ userId is null');
-            alert('Ошибка: не удалось загрузить ID пользователя. Попробуйте обновить страницу.');
-            return;
-        }
-
-        if (isLoading) {
-            console.log('⏳ Already loading');
-            return;
-        }
-
+        console.log('📤 Sending message...');
+        
         const userMessage = { role: 'user', content: input.trim() };
         const updatedMessages = [...messages, userMessage];
         
-        console.log('✅ Adding user message:', userMessage);
         setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
 
         try {
-            console.log('📡 Sending to Backend...');
             const result = await sendConstructorMessage(userId, updatedMessages);
-            console.log('📥 Backend response:', result);
+            console.log('📥 Response:', result);
             
             // СОЗДАНИЕ агента
             if (result.status === 'agent_ready' && result.agent_data) {
-                console.log('✅ AGENT CREATED');
+                console.log('✅ Agent created:', result.agent_id);
                 
                 const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
                 
@@ -130,7 +125,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 
                 const finalMessage = {
                     role: 'assistant',
-                    content: `🎉 Отлично! Агент "${agent_name}" создан!\n\nТеперь:\n1️⃣ Протестируй в предпросмотре справа\n2️⃣ Нажми "Сохранить" для активации\n3️⃣ Настрой каналы связи`
+                    content: `🎉 Агент "${agent_name}" создан!\n\n1️⃣ Протестируй справа\n2️⃣ Нажми "Сохранить"\n3️⃣ Настрой каналы`
                 };
                 
                 const finalMessages = [...updatedMessages, finalMessage];
@@ -150,7 +145,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             }
             // ОБНОВЛЕНИЕ агента
             else if (result.status === 'agent_updated' && result.agent_data) {
-                console.log('✅ AGENT UPDATED');
+                console.log('✅ Agent updated:', result.agent_id);
                 
                 const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
                 
@@ -161,7 +156,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 
                 const updateMessage = {
                     role: 'assistant',
-                    content: `✅ Агент "${agent_name}" обновлён!\n\nИзменения применены. Можешь протестировать в окне предпросмотра →`
+                    content: `✅ Агент "${agent_name}" обновлён!`
                 };
                 
                 const finalMessages = [...updatedMessages, updateMessage];
@@ -181,20 +176,17 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             }
             // Обычный ответ
             else if (result.response) {
-                console.log('💬 Normal response');
                 const assistantMessage = { role: 'assistant', content: result.response };
                 const finalMessages = [...updatedMessages, assistantMessage];
                 setMessages(finalMessages);
                 saveHistory(finalMessages);
-            } else {
-                console.error('❌ Unexpected response format:', result);
             }
             
         } catch (error) {
-            console.error('❌ Send message error:', error);
+            console.error('❌ Error:', error);
             const errorMessage = { 
                 role: 'assistant', 
-                content: `❌ Ошибка: ${error.message}. Попробуйте ещё раз.` 
+                content: `❌ Ошибка: ${error.message}` 
             };
             setMessages([...updatedMessages, errorMessage]);
         } finally {
@@ -250,7 +242,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                             }
                         }}
                         placeholder="Расскажите о своём бизнесе..."
-                        disabled={isLoading}
+                        disabled={isLoading || !userId}
                         className="flex-1"
                     />
 
