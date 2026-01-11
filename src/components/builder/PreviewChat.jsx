@@ -1,188 +1,227 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ArrowRight, Loader2, User } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { testAgent } from '@/components/api/constructorApi';
+// ========================================
+// FINAL VERSION: Components/builder/PreviewChat
+// Дата: 2026-01-11
+// Изменения:
+// - Упрощенные URL аватарок
+// - Fallback на иконку User при ошибке загрузки
+// ========================================
 
-// ✅ Статические аватарки по умолчанию
-const DEFAULT_AVATAR_VICTORIA = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Victoria&style=circle&backgroundColor=fef3c7&hair=longHair&hairColor=auburn&accessories=prescription02&clothingColor=3c4f5c&top=longHairStraight&accessoriesColor=262e33&facialHairColor=auburn&clothesColor=262e33&graphicType=skull&eyeType=happy&eyebrowType=default&mouthType=smile&skinColor=light';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, Loader2, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const DEFAULT_AVATAR_ALEXANDER = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alexander&style=circle&backgroundColor=c0aede&hair=shortHairShortWaved&hairColor=brown&accessories=prescription01&clothingColor=black&top=shortHairShortWaved&accessoriesColor=262e33&facialHairColor=black&clothesColor=heather&graphicType=bat&eyeType=default&eyebrowType=default&mouthType=default&skinColor=light';
+// Упрощенные аватарки по умолчанию
+const DEFAULT_AVATAR_VICTORIA = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Victoria';
+const DEFAULT_AVATAR_ALEXANDER = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alexander';
 
 export default function PreviewChat({ agentData }) {
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const messagesEndRef = useRef(null);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Инициализация чата с приветственным сообщением
+  useEffect(() => {
+    if (agentData?.name) {
+      const greeting = {
+        role: 'assistant',
+        content: `Здравствуйте! Меня зовут ${agentData.name}. Чем могу помочь?`,
+        timestamp: new Date()
+      };
+      setMessages([greeting]);
+    }
+  }, [agentData?.name]);
+
+  // Определяем аватарку
+  const getAvatarUrl = () => {
+    if (agentData?.avatar_url) {
+      return agentData.avatar_url;
+    }
+    const isVictoria = agentData?.name?.toLowerCase().includes('виктори');
+    return isVictoria ? DEFAULT_AVATAR_VICTORIA : DEFAULT_AVATAR_ALEXANDER;
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
+
+    const userMessage = {
+      role: 'user',
+      content: inputValue.trim(),
+      timestamp: new Date()
     };
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
 
-    useEffect(() => {
-        // Reset chat when agent name changes
-        if (agentData.name && messages.length === 0) {
-            setMessages([{
-                role: 'assistant',
-                content: `Здравствуйте! Меня зовут ${agentData.name}. Чем могу помочь?`
-            }]);
-        }
-    }, [agentData.name]);
-    
-    // ✅ Определяем аватарку: загруженная или по умолчанию
-    const avatarUrl = agentData.avatar_url || (
-        agentData.name?.toLowerCase().includes('виктори')
-            ? DEFAULT_AVATAR_VICTORIA
-            : DEFAULT_AVATAR_ALEXANDER
-    );
+    // Симуляция ответа агента
+    setTimeout(() => {
+      const assistantMessage = {
+        role: 'assistant',
+        content: `Спасибо за ваш вопрос! Я ${agentData?.name || 'агент'}, и я здесь, чтобы помочь вам. Это тестовый режим — реальные ответы будут доступны после сохранения агента.`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+      setIsLoading(false);
+    }, 1000);
+  };
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
-        const userMessage = { role: 'user', content: input };
-        setMessages(prev => [...prev, userMessage]);
-        const currentInput = input;
-        setInput('');
-        setIsLoading(true);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-        try {
-            // Если есть external_agent_id, используем API
-            if (agentData.external_agent_id) {
-                const result = await testAgent(agentData.external_agent_id, currentInput);
-                // Отображаем ответ от агента из API
-                setMessages(prev => [...prev, { 
-                    role: 'assistant', 
-                    content: result.response 
-                }]);
-            } 
-            // Fallback на локальную симуляцию
-            else {
-                const responses = [
-                    `Спасибо за ваш вопрос! На основе моей базы знаний могу сказать следующее...`,
-                    `Отличный вопрос! Давайте разберём подробнее...`,
-                    `Да, конечно! Я могу помочь вам с этим. ${agentData.knowledge_base ? 'Согласно нашей информации...' : 'Расскажите подробнее о вашей задаче.'}`,
-                    `Понимаю вас. Позвольте уточнить несколько деталей...`
-                ];
-                
-                const response = responses[Math.floor(Math.random() * responses.length)];
-                setMessages(prev => [...prev, { role: 'assistant', content: response }]);
-            }
-        } catch (error) {
-            console.error('Error testing agent:', error);
-            
-            // В случае ошибки показываем fallback ответ
-            setMessages(prev => [...prev, { 
-                role: 'assistant', 
-                content: 'Извините, произошла ошибка. Попробуйте еще раз.' 
-            }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [inputValue]);
 
-    return (
-        <div className="flex flex-col h-full bg-white">
-            {/* Agent Header */}
-            <div className="p-6 border-b border-slate-100 flex flex-col items-center">
-                <div className="w-16 h-16 rounded-2xl overflow-hidden mb-3 shadow-lg border-2 border-slate-100">
-                    <img 
-                        src={avatarUrl} 
-                        alt="Agent" 
-                        className="w-full h-full object-cover" 
-                        onError={(e) => {
-                            // Fallback если аватарка не загрузилась
-                            e.target.src = DEFAULT_AVATAR_VICTORIA;
-                        }}
-                    />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-800">
-                    {agentData.name || 'Ваш агент'}
-                </h3>
-                {agentData.business_type && (
-                    <p className="text-xs text-slate-500 mt-1">{agentData.business_type}</p>
-                )}
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.length === 0 && !agentData.name && (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                            <User className="w-5 h-5 text-slate-400" />
-                        </div>
-                        <p className="text-sm text-slate-500">
-                            Создайте агента в левой панели,<br />
-                            чтобы протестировать его здесь
-                        </p>
-                    </div>
-                )}
-
-                <AnimatePresence initial={false}>
-                    {messages.map((msg, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div
-                                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                                    msg.role === 'user'
-                                        ? 'bg-slate-900 text-white'
-                                        : 'bg-slate-100 text-slate-800'
-                                }`}
-                            >
-                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                            </div>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-
-                {isLoading && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex justify-start"
-                    >
-                        <div className="bg-slate-100 rounded-2xl px-4 py-3">
-                            <div className="flex items-center gap-2">
-                                <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
-                                <span className="text-sm text-slate-500">{agentData.name || 'Агент'} печатает...</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="p-4 border-t border-slate-100">
-                <div className="flex items-center gap-2 bg-slate-50 rounded-2xl px-4 py-2">
-                    <Input
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder={agentData.name ? "Протестируйте агента..." : "Сначала создайте агента..."}
-                        disabled={!agentData.name}
-                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm"
-                    />
-                    <Button
-                        onClick={handleSend}
-                        disabled={!input.trim() || isLoading || !agentData.name}
-                        size="icon"
-                        className="rounded-full bg-slate-900 hover:bg-slate-800 h-9 w-9"
-                    >
-                        <ArrowRight className="w-4 h-4" />
-                    </Button>
-                </div>
-            </div>
+  return (
+    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm">
+      {/* Header */}
+      <div className="flex items-center gap-4 p-4 border-b bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0">
+          {!avatarError && getAvatarUrl() ? (
+            <img
+              src={getAvatarUrl()}
+              alt={agentData?.name || 'Agent'}
+              className="w-full h-full object-cover"
+              onError={() => setAvatarError(true)}
+            />
+          ) : (
+            <User className="w-6 h-6 text-gray-400" />
+          )}
         </div>
-    );
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-gray-900 truncate">
+            {agentData?.name || 'Ваш агент'}
+          </h3>
+          {agentData?.business_type && (
+            <p className="text-sm text-gray-600 truncate">
+              {agentData.business_type}
+            </p>
+          )}
+        </div>
+        <div className="flex-shrink-0">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            ● Онлайн
+          </span>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <AnimatePresence>
+          {messages.map((message, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`flex gap-2 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                {message.role === 'assistant' && (
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                    {!avatarError && getAvatarUrl() ? (
+                      <img
+                        src={getAvatarUrl()}
+                        alt="Agent"
+                        className="w-full h-full object-cover"
+                        onError={() => setAvatarError(true)}
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                )}
+                <div className={`px-4 py-2 rounded-2xl ${
+                  message.role === 'user'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-900'
+                }`}>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex justify-start"
+          >
+            <div className="flex gap-2 max-w-[80%]">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                {!avatarError && getAvatarUrl() ? (
+                  <img
+                    src={getAvatarUrl()}
+                    alt="Agent"
+                    className="w-full h-full object-cover"
+                    onError={() => setAvatarError(true)}
+                  />
+                ) : (
+                  <User className="w-4 h-4 text-gray-400" />
+                )}
+              </div>
+              <div className="px-4 py-2 rounded-2xl bg-gray-100">
+                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="border-t bg-white p-4">
+        <div className="flex gap-2">
+          <Textarea
+            ref={textareaRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              agentData?.name 
+                ? `Напишите сообщение ${agentData.name}...`
+                : "Протестируйте агента..."
+            }
+            className="resize-none min-h-[44px] max-h-[200px]"
+            rows={1}
+          />
+          <Button
+            onClick={handleSendMessage}
+            disabled={isLoading || !inputValue.trim()}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4"
+          >
+            {isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          💡 Это тестовый режим. Реальные ответы будут после сохранения агента.
+        </p>
+      </div>
+    </div>
+  );
 }
