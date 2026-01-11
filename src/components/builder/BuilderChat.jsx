@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Paperclip, ArrowRight, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from '@/api/base44Client';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, Loader2, Paperclip } from 'lucide-react';
 import { sendConstructorMessage } from '@/components/api/constructorApi';
 
+// 🔑 Ключ для хранения истории в localStorage
 const STORAGE_KEY = 'neuro_seller_constructor_history';
 
 export default function BuilderChat({ onAgentUpdate, agentData }) {
@@ -13,148 +13,130 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
-            content: 'Привет! Я помогу создать вашего персонального AI-агента. Для начала расскажите, какой у вас бизнес и чем занимается ваша компания?'
+            content: 'Привет! Я AI-маркетолог, помогу создать агента-продавца, который будет закрывать клиентов в переписке 🎯\n\nРасскажи о своём бизнесе:\n- Чем занимаешься?\n- Что предлагаешь и по какой цене?'
         }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [historyLoaded, setHistoryLoaded] = useState(false);
+    const [files, setFiles] = useState([]);
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
+    // 📂 Загружаем userId при монтировании
     useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    useEffect(() => {
-        // Получаем ID текущего пользователя
-        const fetchUser = async () => {
+        const loadUserId = async () => {
             try {
                 const user = await base44.auth.me();
-                setUserId(user.id);
-                
-                // После получения userId загружаем историю
-                if (!historyLoaded) {
-                    await loadHistory(user.id);
-                    setHistoryLoaded(true);
+                if (user?.id) {
+                    setUserId(user.id);
+                    console.log('✅ User ID loaded:', user.id);
+                    
+                    // Загружаем историю из localStorage
+                    loadHistory(user.id);
                 }
             } catch (error) {
-                console.error('Error fetching user:', error);
+                console.error('❌ Ошибка загрузки пользователя:', error);
             }
         };
-        fetchUser();
-    }, [historyLoaded]);
 
-    // ✅ Загрузка истории (localStorage → БД)
+        loadUserId();
+    }, []);
+
+    // 📚 Загрузка истории из localStorage или Backend
     const loadHistory = async (uid) => {
         try {
-            // 1. Проверяем localStorage
-            const localHistory = localStorage.getItem(`${STORAGE_KEY}_${uid}`);
+            const storageKey = `${STORAGE_KEY}_${uid}`;
+            const savedHistory = localStorage.getItem(storageKey);
             
-            if (localHistory) {
-                const parsedHistory = JSON.parse(localHistory);
-                console.log('📦 Loaded history from localStorage:', parsedHistory.length, 'messages');
-                
-                if (parsedHistory.length > 1) { // Больше чем дефолтное сообщение
-                    setMessages(parsedHistory);
-                    return;
-                }
+            if (savedHistory) {
+                const parsedHistory = JSON.parse(savedHistory);
+                console.log('✅ История загружена из localStorage:', parsedHistory.length, 'сообщений');
+                setMessages(parsedHistory);
+                return;
             }
             
-            // 2. Если в localStorage пусто, загружаем из БД
-            console.log('🔍 Loading history from database...');
+            // Если localStorage пуст — загружаем из Backend
+            console.log('📡 Загружаем историю из Backend...');
             const response = await fetch(`https://neuro-seller-production.up.railway.app/api/v1/constructor/history/${uid}`);
             
             if (response.ok) {
                 const data = await response.json();
-                
                 if (data.messages && data.messages.length > 0) {
-                    console.log('📥 Loaded history from DB:', data.messages.length, 'messages');
+                    console.log('✅ История загружена из Backend:', data.messages.length, 'сообщений');
                     setMessages(data.messages);
-                    
-                    // Сохраняем в localStorage
-                    localStorage.setItem(`${STORAGE_KEY}_${uid}`, JSON.stringify(data.messages));
+                    // Сохраняем в localStorage для быстрого доступа
+                    saveHistory(data.messages, uid);
                 }
             }
         } catch (error) {
-            console.error('Error loading history:', error);
+            console.error('❌ Ошибка загрузки истории:', error);
         }
     };
 
-    // ✅ Сохранение истории (localStorage + БД)
-    const saveHistory = (updatedMessages) => {
-        if (!userId) return;
+    // 💾 Сохранение истории в localStorage
+    const saveHistory = (msgs, uid = userId) => {
+        if (!uid) return;
         
         try {
-            // 1. Сохраняем в localStorage (мгновенно)
-            localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(updatedMessages));
-            console.log('💾 Saved to localStorage:', updatedMessages.length, 'messages');
-            
-            // 2. Сохраняем в БД (в фоне, не блокируем UI)
-            // Backend автоматически сохраняет историю при каждом запросе к /constructor/chat
+            const storageKey = `${STORAGE_KEY}_${uid}`;
+            localStorage.setItem(storageKey, JSON.stringify(msgs));
+            console.log('💾 История сохранена в localStorage');
         } catch (error) {
-            console.error('Error saving history:', error);
+            console.error('❌ Ошибка сохранения истории:', error);
         }
     };
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading || !userId) return;
+    // 📤 Отправка сообщения
+    const handleSendMessage = async () => {
+        if (!input.trim() || !userId || isLoading) return;
 
-        const userMessage = { role: 'user', content: input };
+        const userMessage = { role: 'user', content: input.trim() };
         const updatedMessages = [...messages, userMessage];
-        setMessages(updatedMessages);
-        saveHistory(updatedMessages); // ✅ Сохраняем сразу
         
-        const currentInput = input;
+        setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
 
         try {
-            // ✅ Отправляем весь массив сообщений в Railway API
+            console.log('📤 Отправка сообщения:', userMessage.content);
+            
             const result = await sendConstructorMessage(userId, updatedMessages);
             
-            // ✅ Проверяем формат ответа Railway
+            console.log('📥 Получен ответ от Backend:', result);
+            
+            // 🎯 Обработка СОЗДАНИЯ агента (AGENT-READY)
             if (result.status === 'agent_ready' && result.agent_data) {
-                // Агент готов!
-                const { 
-                    agent_name, 
-                    business_type, 
-                    description,
-                    instructions,
-                    knowledge_base 
-                } = result.agent_data;
-                const agentId = result.agent_id;
-                
-                console.log('✅ Agent created:', agentId);
+                console.log('✅ Agent created:', result.agent_id);
                 console.log('Agent data:', result.agent_data);
                 
-                // Определяем аватар по имени
-                const isFemale = agent_name.toLowerCase().includes('виктори') || 
-                                 agent_name.toLowerCase().includes('анна') || 
-                                 agent_name.toLowerCase().includes('мария') ||
-                                 agent_name.toLowerCase().includes('елена');
+                const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
+                const agentId = result.agent_id;
+                
+                // Определяем аватар
+                const lowerName = agent_name.toLowerCase();
+                const isFemale = lowerName.includes('виктори') || 
+                                lowerName.includes('анна') || 
+                                lowerName.includes('мария') || 
+                                lowerName.includes('елена');
                 
                 const avatarUrl = isFemale
                     ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
                     : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
-
-                // Формируем финальное сообщение для пользователя
-                const finalMessage = `🎉 Отлично! Агент "${agent_name}" для "${business_type}" создан!\n\nТеперь вы можете:\n1. Протестировать агента в окне предпросмотра справа\n2. Нажать "Сохранить" для активации\n3. Настроить каналы связи (Telegram, WhatsApp)`;
                 
-                const finalMessages = [...updatedMessages, { 
-                    role: 'assistant', 
-                    content: finalMessage
-                }];
+                // Финальное сообщение для пользователя
+                const finalMessage = {
+                    role: 'assistant',
+                    content: `🎉 Отлично! Агент "${agent_name}" для "${business_type}" создан!\n\nТеперь:\n1️⃣ Протестируй агента в окне предпросмотра справа\n2️⃣ Нажми "Сохранить" для активации\n3️⃣ Настрой каналы связи (Telegram, WhatsApp)`
+                };
                 
+                const finalMessages = [...updatedMessages, finalMessage];
                 setMessages(finalMessages);
-                saveHistory(finalMessages); // ✅ Сохраняем историю НАВСЕГДА
-
-                // Передаём данные агента в родительский компонент
-                onAgentUpdate({ 
+                
+                // Сохраняем историю
+                saveHistory(finalMessages);
+                
+                // Передаём данные агента родителю
+                onAgentUpdate({
                     name: agent_name,
                     business_type: business_type,
                     description: description || business_type,
@@ -166,129 +148,168 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     external_agent_id: agentId,
                     status: 'draft'
                 });
+            }
+            // 🔄 Обработка ОБНОВЛЕНИЯ агента (AGENT-UPDATE)
+            else if (result.status === 'agent_updated' && result.agent_data) {
+                console.log('✅ Agent updated:', result.agent_id);
+                console.log('Updated data:', result.agent_data);
                 
-            } else if (result.response) {
-                // Обычный ответ мета-агента (агент ещё не готов)
-                const responseMessages = [...updatedMessages, { 
-                    role: 'assistant', 
-                    content: result.response 
-                }];
+                const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
+                const agentId = result.agent_id;
                 
-                setMessages(responseMessages);
-                saveHistory(responseMessages); // ✅ Сохраняем ответ
-            } else {
-                // Неизвестный формат
-                console.error('Unexpected API response format:', result);
-                const errorMessages = [...updatedMessages, { 
-                    role: 'assistant', 
-                    content: '❌ Произошла ошибка при обработке ответа. Попробуйте ещё раз.' 
-                }];
+                // Определяем аватар (используем существующий или пересоздаём)
+                const lowerName = agent_name.toLowerCase();
+                const isFemale = lowerName.includes('виктори') || 
+                                lowerName.includes('анна') || 
+                                lowerName.includes('мария') || 
+                                lowerName.includes('елена');
                 
-                setMessages(errorMessages);
-                saveHistory(errorMessages);
+                const avatarUrl = isFemale
+                    ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
+                    : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+                
+                // Финальное сообщение об обновлении
+                const updateMessage = {
+                    role: 'assistant',
+                    content: `✅ Агент "${agent_name}" обновлён!\n\nИзменения применены. Можешь протестировать в окне предпросмотра →`
+                };
+                
+                const finalMessages = [...updatedMessages, updateMessage];
+                setMessages(finalMessages);
+                
+                // Сохраняем историю
+                saveHistory(finalMessages);
+                
+                // Передаём обновлённые данные родителю
+                onAgentUpdate({
+                    name: agent_name,
+                    business_type: business_type,
+                    description: description || business_type,
+                    instructions: instructions || '',
+                    knowledge_base: typeof knowledge_base === 'string' 
+                        ? knowledge_base 
+                        : JSON.stringify(knowledge_base, null, 2),
+                    avatar_url: avatarUrl,
+                    external_agent_id: agentId,
+                    status: 'draft'
+                });
+            }
+            // 💬 Обычный ответ (продолжение диалога)
+            else if (result.response) {
+                const assistantMessage = { role: 'assistant', content: result.response };
+                const finalMessages = [...updatedMessages, assistantMessage];
+                setMessages(finalMessages);
+                
+                // Сохраняем историю
+                saveHistory(finalMessages);
             }
             
         } catch (error) {
-            console.error('❌ Error calling constructor API:', error);
-            
-            // Показываем ошибку пользователю
-            const errorMessages = [...updatedMessages, { 
+            console.error('❌ Ошибка отправки сообщения:', error);
+            const errorMessage = { 
                 role: 'assistant', 
-                content: `❌ Ошибка соединения с сервером. Пожалуйста, попробуйте ещё раз.\n\n${error.message}` 
-            }];
-            
-            setMessages(errorMessages);
-            saveHistory(errorMessages);
+                content: '❌ Произошла ошибка. Попробуйте ещё раз.' 
+            };
+            setMessages([...updatedMessages, errorMessage]);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleFileClick = () => {
-        fileInputRef.current?.click();
+    // 📂 Обработка файлов
+    const handleFileChange = (e) => {
+        const selectedFiles = Array.from(e.target.files);
+        setFiles(prev => [...prev, ...selectedFiles]);
     };
 
-    const handleFileUpload = (e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setInput(`[Загружен файл: ${file.name}]`);
-        }
-    };
+    // 📜 Автоскролл вниз
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                <AnimatePresence initial={false}>
-                    {messages.map((msg, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+        <div className="flex flex-col h-full bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800">
+            {/* Сообщения */}
+            <ScrollArea className="flex-1 p-6">
+                <div className="space-y-4">
+                    {messages.map((message, index) => (
+                        <div 
+                            key={index} 
+                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div
-                                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                                    msg.role === 'user'
-                                        ? 'bg-slate-900 text-white'
-                                        : 'bg-slate-100 text-slate-800'
+                            <div 
+                                className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                                    message.role === 'user' 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                                 }`}
                             >
-                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                            </div>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-
-                {isLoading && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex justify-start"
-                    >
-                        <div className="bg-slate-100 rounded-2xl px-4 py-3">
-                            <div className="flex items-center gap-2">
-                                <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
-                                <span className="text-sm text-slate-500">Думаю...</span>
+                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                             </div>
                         </div>
-                    </motion.div>
-                )}
-                <div ref={messagesEndRef} />
-            </div>
+                    ))}
+                    {isLoading && (
+                        <div className="flex justify-start">
+                            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-3">
+                                <Loader2 className="h-5 w-5 animate-spin text-gray-600 dark:text-gray-400" />
+                            </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
+            </ScrollArea>
 
-            <div className="p-4 border-t border-slate-200">
-                <div className="flex items-center gap-2 bg-slate-50 rounded-2xl px-4 py-2">
+            {/* Поле ввода */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+                <div className="flex items-end gap-2">
                     <input
-                        type="file"
                         ref={fileInputRef}
+                        type="file"
+                        multiple
                         className="hidden"
-                        onChange={handleFileUpload}
-                        accept=".pdf,.doc,.docx,.txt,.xlsx,.csv"
+                        onChange={handleFileChange}
                     />
-                    <button
-                        onClick={handleFileClick}
-                        className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                    
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isLoading}
                     >
-                        <Paperclip className="w-5 h-5 text-slate-500" />
-                    </button>
+                        <Paperclip className="h-5 w-5" />
+                    </Button>
+
                     <Input
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Напишите сообщение..."
-                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm"
+                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                        placeholder="Расскажите о своём бизнесе..."
+                        disabled={isLoading}
+                        className="flex-1"
                     />
-                    <Button
-                        onClick={handleSend}
-                        disabled={!input.trim() || isLoading}
-                        size="icon"
-                        className="rounded-full bg-slate-900 hover:bg-slate-800 h-9 w-9"
+
+                    <Button 
+                        onClick={handleSendMessage} 
+                        disabled={isLoading || !input.trim()}
                     >
-                        <ArrowRight className="w-4 h-4" />
+                        {isLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                            <Send className="h-5 w-5" />
+                        )}
                     </Button>
                 </div>
+
+                {/* Прикреплённые файлы */}
+                {files.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {files.map((file, index) => (
+                            <div key={index} className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                                {file.name}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
