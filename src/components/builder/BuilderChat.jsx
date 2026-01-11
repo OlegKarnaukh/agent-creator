@@ -6,14 +6,14 @@ import { Send, Loader2 } from 'lucide-react';
 import { sendConstructorMessage } from '@/components/api/constructorApi';
 
 const STORAGE_KEY = 'neuro_seller_constructor_history';
-const USER_ID_KEY = 'neuro_seller_user_id'; // 🔑 Ключ для userId
+const USER_ID_KEY = 'neuro_seller_user_id';
 
 export default function BuilderChat({ onAgentUpdate, agentData }) {
     const [userId, setUserId] = useState(null);
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
-            content: 'Привет! Я AI-маркетолог, помогу создать агента-продавца, который будет закрывать клиентов в переписке 🎯\n\nРасскажи о своём бизнесе:\n- Чем занимаешься?\n- Что предлагаешь и по какой цене?'
+            content: 'Здравствуйте! Я помогу создать AI-агента для вашего бизнеса, который будет конвертировать лиды в продажи через переписку.\n\nДля начала расскажите:\n- Какой у вас бизнес?\n- Какие услуги или товары предлагаете?\n- Какие цены?'
         }
     ]);
     const [input, setInput] = useState('');
@@ -271,8 +271,9 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     ))}
                     {isLoading && (
                         <div className="flex justify-start">
-                            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-3">
+                            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-3 flex items-center gap-2">
                                 <Loader2 className="h-5 w-5 animate-spin text-gray-600 dark:text-gray-400" />
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Думаю...</span>
                             </div>
                         </div>
                     )}
