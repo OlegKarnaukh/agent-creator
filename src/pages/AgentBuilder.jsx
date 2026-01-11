@@ -45,7 +45,6 @@ export default function AgentBuilder() {
         setSaveSuccess(false);
         
         try {
-            // Если есть external_agent_id, сначала вызываем API сохранения
             if (agentData.external_agent_id) {
                 try {
                     const apiResult = await saveAgent(agentData.external_agent_id);
@@ -55,10 +54,8 @@ export default function AgentBuilder() {
                 }
             }
 
-            // Сохраняем в локальной базе данных
             const savedAgent = await base44.entities.Agent.create(agentData);
             
-            // ✅ ИЗМЕНЕНО: Обновляем статус и показываем уведомление
             setAgentData(prev => ({ 
                 ...prev, 
                 status: 'active',
@@ -66,8 +63,6 @@ export default function AgentBuilder() {
             }));
             
             setSaveSuccess(true);
-            
-            // Скрываем уведомление через 3 секунды
             setTimeout(() => setSaveSuccess(false), 3000);
             
         } catch (error) {
@@ -80,7 +75,6 @@ export default function AgentBuilder() {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            {/* Header */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
                 <div className="max-w-screen-2xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -99,7 +93,6 @@ export default function AgentBuilder() {
                     </div>
                     
                     <div className="flex items-center gap-3">
-                        {/* Success notification */}
                         <AnimatePresence>
                             {saveSuccess && (
                                 <motion.div
@@ -126,10 +119,8 @@ export default function AgentBuilder() {
                 </div>
             </header>
 
-            {/* Main Content */}
             <main className="max-w-screen-2xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-73px)]">
-                    {/* Left Column - Create/Configure */}
                     <div className="border-r border-slate-200 bg-white flex flex-col">
                         <div className="p-4 border-b border-slate-200">
                             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -171,7 +162,6 @@ export default function AgentBuilder() {
                         </motion.div>
                     </div>
 
-                    {/* Right Column - Preview */}
                     <div className="bg-gradient-to-br from-slate-100 to-slate-50 flex flex-col">
                         <div className="p-4 border-b border-slate-200 bg-white/50 backdrop-blur-sm">
                             <h2 className="font-semibold text-slate-700">Предпросмотр</h2>

@@ -1,202 +1,164 @@
-// ========================================
-// FINAL VERSION: Pages/Dashboard
-// Дата: 2026-01-11
-// Исправлено: импорт base44
-// ========================================
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Plus, MessageSquare, Users, TrendingUp, Loader2, Bot } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { createPageUrl } from '@/utils';
+import { Button } from "@/components/ui/button";
+import { Plus, MessageSquare, Users, TrendingUp, Zap, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { createPageUrl } from "@/utils";
+
 import StatCard from '@/components/dashboard/StatCard';
 import AgentCard from '@/components/dashboard/AgentCard';
 import ConversationFeed from '@/components/dashboard/ConversationFeed';
 import ChannelSettings from '@/components/dashboard/ChannelSettings';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [selectedAgent, setSelectedAgent] = useState(null);
+    const navigate = useNavigate();
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedAgentId = urlParams.get('agentId');
+    
+    const [selectedAgent, setSelectedAgent] = useState(null);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        // Используем window.base44 напрямую
-        const currentUser = await window.base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        console.error('Failed to load user:', error);
-      }
-    };
-    loadUser();
-  }, []);
+    const { data: agents = [], isLoading: agentsLoading } = useQuery({
+        queryKey: ['agents'],
+        queryFn: () => base44.entities.Agent.list('-created_date'),
+    });
 
-  const { data: agentConversations = [], isLoading } = useQuery({
-    queryKey: ['agentConversations', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const response = await fetch(
-        `https://neuro-seller-production.up.railway.app/api/v1/constructor/conversations/${user.id}`
-      );
-      if (!response.ok) throw new Error('Failed to fetch conversations');
-      return response.json();
-    },
-    enabled: !!user?.id,
-  });
+    const { data: conversations = [] } = useQuery({
+        queryKey: ['conversations', selectedAgent?.id],
+        queryFn: () => base44.entities.Conversation.filter({ agent_id: selectedAgent?.id }, '-created_date', 10),
+        enabled: !!selectedAgent?.id,
+    });
 
-  const agents = agentConversations
-    .filter(conv => conv.agent !== null)
-    .map(conv => ({
-      id: conv.agent.id,
-      name: conv.agent.agent_name,
-      avatar_url: conv.agent.avatar_url,
-      business_type: conv.agent.business_type,
-      status: conv.agent.status,
-      conversation_id: conv.id,
-      stats: {
-        totalDialogs: 0,
-        activeDialogs: 0,
-        conversionRate: 0,
-      }
-    }));
+    useEffect(() => {
+        if (agents.length > 0) {
+            if (selectedAgentId) {
+                const agent = agents.find(a => a.id === selectedAgentId);
+                setSelectedAgent(agent || agents[0]);
+            } else if (!selectedAgent) {
+                setSelectedAgent(agents[0]);
+            }
+        }
+    }, [agents, selectedAgentId]);
 
-  const totalDialogs = agents.reduce((sum, agent) => sum + (agent.stats?.totalDialogs || 0), 0);
-  const activeDialogs = agents.reduce((sum, agent) => sum + (agent.stats?.activeDialogs || 0), 0);
-  const avgConversion = agents.length > 0
-    ? agents.reduce((sum, agent) => sum + (agent.stats?.conversionRate || 0), 0) / agents.length
-    : 0;
+    const stats = selectedAgent ? [
+        { 
+            title: 'Диалогов сегодня', 
+            value: selectedAgent.stats?.today_conversations || 0,
+            icon: MessageSquare,
+            color: 'blue',
+            trend: 12
+        },
+        { 
+            title: 'Всего диалогов', 
+            value: selectedAgent.stats?.total_conversations || 0,
+            icon: Users,
+            color: 'purple'
+        },
+        { 
+            title: 'Конверсия', 
+            value: `${selectedAgent.stats?.conversion_rate || 0}%`,
+            icon: TrendingUp,
+            color: 'green',
+            trend: 5
+        },
+        { 
+            title: 'Активных каналов', 
+            value: selectedAgent.channels?.filter(c => c.enabled).length || 0,
+            icon: Zap,
+            color: 'orange'
+        },
+    ] : [];
 
-  const handleCreateAgent = () => {
-    // Перекидываем сразу на AgentBuilder БЕЗ conversationId
-    // BuilderChat автоматически создаст новый диалог
-    const url = createPageUrl('AgentBuilder');
-    navigate(url);
-  };
-
-  const handleSelectAgent = (agent) => {
-    setSelectedAgent(agent);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-600">Загрузка агентов...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">AI Агенты</h1>
-            <p className="text-gray-600">Управление вашими AI-агентами и аналитика</p>
-          </div>
-          <Button
-            onClick={handleCreateAgent}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Создать агента
-          </Button>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard
-            title="Всего диалогов"
-            value={totalDialogs}
-            icon={MessageSquare}
-            trend={totalDialogs > 0 ? "+12%" : "—"}
-            trendUp={true}
-          />
-          <StatCard
-            title="Активных диалогов"
-            value={activeDialogs}
-            icon={Users}
-            trend={activeDialogs > 0 ? "+8%" : "—"}
-            trendUp={true}
-          />
-          <StatCard
-            title="Конверсия"
-            value={agents.length > 0 ? `${avgConversion.toFixed(1)}%` : "0%"}
-            icon={TrendingUp}
-            trend={avgConversion > 0 ? "+5%" : "—"}
-            trendUp={true}
-          />
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Agents List */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-xl font-semibold mb-6">Ваши агенты</h2>
-              
-              {/* Если агентов нет — показываем подсказку */}
-              {agents.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-12"
-                >
-                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Bot className="h-10 w-10 text-indigo-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    У вас пока нет агентов
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Создайте первого AI-агента для автоматизации общения с клиентами
-                  </p>
-                  <Button
-                    onClick={handleCreateAgent}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
-                  >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Создать агента
-                  </Button>
-                </motion.div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {agents.map((agent) => (
-                    <AgentCard
-                      key={agent.id}
-                      agent={agent}
-                      onSelect={handleSelectAgent}
-                      isSelected={selectedAgent?.id === agent.id}
-                    />
-                  ))}
-                </div>
-              )}
+    if (agentsLoading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
             </div>
+        );
+    }
 
-            {/* Agent Details */}
-            {selectedAgent && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6"
-              >
-                <ConversationFeed agent={selectedAgent} />
-              </motion.div>
-            )}
-          </div>
+    return (
+        <div className="min-h-screen bg-slate-50">
+            <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+                <div className="max-w-screen-2xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-bold text-slate-900">AI Агенты</h1>
+                        <p className="text-sm text-slate-500">Управляйте вашими виртуальными ассистентами</p>
+                    </div>
+                    
+                    <Button
+                        onClick={() => navigate(createPageUrl('AgentBuilder'))}
+                        className="bg-slate-900 hover:bg-slate-800 rounded-full px-6"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Создать агента
+                    </Button>
+                </div>
+            </header>
 
-          {/* Channel Settings */}
-          <div className="lg:col-span-1">
-            <ChannelSettings agent={selectedAgent} />
-          </div>
+            <main className="max-w-screen-2xl mx-auto px-6 py-8">
+                {agents.length === 0 ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-20"
+                    >
+                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-6">
+                            <Zap className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Создайте первого агента</h2>
+                        <p className="text-slate-500 mb-6 text-center max-w-md">
+                            AI-агенты будут общаться с вашими клиентами 24/7 через любые каналы связи
+                        </p>
+                        <Button
+                            onClick={() => navigate(createPageUrl('AgentBuilder'))}
+                            className="bg-slate-900 hover:bg-slate-800 rounded-full px-8 py-6 text-lg"
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Создать агента
+                        </Button>
+                    </motion.div>
+                ) : (
+                    <div className="space-y-8">
+                        <div>
+                            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">
+                                Ваши агенты
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                {agents.map((agent) => (
+                                    <AgentCard
+                                        key={agent.id}
+                                        agent={agent}
+                                        isSelected={selectedAgent?.id === agent.id}
+                                        onClick={() => setSelectedAgent(agent)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {selectedAgent && (
+                            <>
+                                <div>
+                                    <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">
+                                        Статистика — {selectedAgent.name}
+                                    </h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        {stats.map((stat, idx) => (
+                                            <StatCard key={idx} {...stat} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <ConversationFeed conversations={conversations} />
+                                    <ChannelSettings agent={selectedAgent} />
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+            </main>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
