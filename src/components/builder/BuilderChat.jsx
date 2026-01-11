@@ -27,7 +27,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             try {
                 console.log('🔍 Loading user...');
                 
-                // Проверяем localStorage
                 let savedUserId = localStorage.getItem(USER_ID_KEY);
                 
                 if (savedUserId) {
@@ -37,7 +36,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     return;
                 }
                 
-                // Пытаемся загрузить из Base44
                 if (typeof window !== 'undefined' && window.base44) {
                     const user = await window.base44.auth.me();
                     console.log('✅ User loaded from Base44:', user);
@@ -50,7 +48,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     }
                 }
                 
-                // Fallback: создаём стабильный временный ID
                 const tempId = 'temp-user-' + Math.random().toString(36).substr(2, 9);
                 console.log('⚠️ Created temp user ID:', tempId);
                 setUserId(tempId);
@@ -109,12 +106,41 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         }
     };
 
-    // Очистка Markdown форматирования
-    const cleanMarkdown = (text) => {
-        return text
-            .replace(/\*\*(.+?)\*\*/g, '$1') // **текст** → текст
-            .replace(/\*(.+?)\*/g, '$1')     // *текст* → текст
-            .replace(/`(.+?)`/g, '$1');      // `код` → код
+    // Рендеринг Markdown (только bold)
+    const renderMarkdown = (text) => {
+        // Разбиваем текст на части: обычный текст и **жирный**
+        const parts = [];
+        let lastIndex = 0;
+        const regex = /\*\*(.+?)\*\*/g;
+        let match;
+
+        while ((match = regex.exec(text)) !== null) {
+            // Добавляем обычный текст перед жирным
+            if (match.index > lastIndex) {
+                parts.push({
+                    type: 'text',
+                    content: text.substring(lastIndex, match.index)
+                });
+            }
+            
+            // Добавляем жирный текст
+            parts.push({
+                type: 'bold',
+                content: match[1]
+            });
+            
+            lastIndex = regex.lastIndex;
+        }
+        
+        // Добавляем оставшийся текст
+        if (lastIndex < text.length) {
+            parts.push({
+                type: 'text',
+                content: text.substring(lastIndex)
+            });
+        }
+        
+        return parts;
     };
 
     // Отправка сообщения
@@ -130,7 +156,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         setInput('');
         setIsLoading(true);
 
-        // Сброс высоты textarea
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
         }
@@ -203,10 +228,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             }
             // Обычный ответ
             else if (result.response) {
-                // Очищаем Markdown форматирование
-                const cleanedResponse = cleanMarkdown(result.response);
-                
-                const assistantMessage = { role: 'assistant', content: cleanedResponse };
+                const assistantMessage = { role: 'assistant', content: result.response };
                 const finalMessages = [...updatedMessages, assistantMessage];
                 setMessages(finalMessages);
                 saveHistory(finalMessages);
@@ -228,7 +250,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
     const handleInputChange = (e) => {
         setInput(e.target.value);
         
-        // Автоматически подстраиваем высоту
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
@@ -241,7 +262,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             e.preventDefault();
             handleSendMessage();
         }
-        // Shift+Enter → новая строка (по умолчанию работает)
     };
 
     // Автоскролл
@@ -265,7 +285,20 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                                         : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                                 }`}
                             >
-                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                <div className="text-sm whitespace-pre-wrap">
+                                    {message.content.split('\n').map((line, lineIndex) => (
+                                        <React.Fragment key={lineIndex}>
+                                            {renderMarkdown(line).map((part, partIndex) => (
+                                                part.type === 'bold' ? (
+                                                    <strong key={partIndex}>{part.content}</strong>
+                                                ) : (
+                                                    <span key={partIndex}>{part.content}</span>
+                                                )
+                                            ))}
+                                            {lineIndex < message.content.split('\n').length - 1 && <br />}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     ))}
