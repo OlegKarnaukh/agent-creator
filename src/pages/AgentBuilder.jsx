@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,26 @@ export default function AgentBuilder() {
         }
     });
 
+    // ✅ ДОБАВЛЕНО: Логирование изменений agentData
+    useEffect(() => {
+        console.log('AgentData updated:', agentData);
+    }, [agentData]);
+
+    // ✅ ДОБАВЛЕНО: Автопереключение на вкладку "Настроить" при создании агента
+    useEffect(() => {
+        if (agentData.external_agent_id && activeTab === 'create') {
+            console.log('Agent created, switching to configure tab');
+            setTimeout(() => setActiveTab('configure'), 500);
+        }
+    }, [agentData.external_agent_id, activeTab]);
+
     const handleAgentUpdate = (updates) => {
-        setAgentData(prev => ({ ...prev, ...updates }));
+        console.log('handleAgentUpdate called with:', updates);
+        setAgentData(prev => {
+            const newData = { ...prev, ...updates };
+            console.log('New agentData:', newData);
+            return newData;
+        });
     };
 
     const handleSave = async () => {
@@ -85,7 +103,7 @@ export default function AgentBuilder() {
                     
                     <Button
                         onClick={handleSave}
-                        disabled={!agentData.name || isSaving || agentData.status !== 'active'}
+                        disabled={!agentData.name || isSaving}
                         className="bg-slate-900 hover:bg-slate-800 rounded-full px-6 disabled:opacity-50"
                     >
                         <Save className="w-4 h-4 mr-2" />
