@@ -1,545 +1,433 @@
-// Components/builder/BuilderChat
+// ========================================
+// FINAL VERSION: Components/builder/BuilderChat
+// Дата: 2026-01-11
+// Изменения:
+// - Упрощенные URL аватарок (DiceBear v9)
+// - Принимает conversationId как проп
+// - Исправлена detectAgentStatus
+// - knowledge_base передается как объект
+// ========================================
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, User, Bot } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// ============================================================
-// КОНСТАНТЫ
-// ============================================================
-
+// Константы
 const STORAGE_KEY_PREFIX = 'neuro_seller_conversation_';
 const USER_ID_KEY = 'neuro_seller_user_id';
 const API_BASE = 'https://neuro-seller-production.up.railway.app/api/v1';
 
-// ✅ Статические аватарки по умолчанию
-const DEFAULT_AVATAR_VICTORIA = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Victoria&style=circle&backgroundColor=fef3c7&hair=longHair&hairColor=auburn&accessories=prescription02&clothingColor=3c4f5c&top=longHairStraight&accessoriesColor=262e33&facialHairColor=auburn&clothesColor=262e33&graphicType=skull&eyeType=happy&eyebrowType=default&mouthType=smile&skinColor=light';
+// Упрощенные аватарки по умолчанию
+const DEFAULT_AVATAR_VICTORIA = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Victoria';
+const DEFAULT_AVATAR_ALEXANDER = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alexander';
 
-const DEFAULT_AVATAR_ALEXANDER = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alexander&style=circle&backgroundColor=c0aede&hair=shortHairShortWaved&hairColor=brown&accessories=prescription01&clothingColor=black&top=shortHairShortWaved&accessoriesColor=262e33&facialHairColor=black&clothesColor=heather&graphicType=bat&eyeType=default&eyebrowType=default&mouthType=default&skinColor=light';
-
-// ============================================================
-// API HELPERS
-// ============================================================
-
-async function sendConstructorMessage(userId, messages, conversationId = null) {
-  const body = {
+// API Helpers
+const sendConstructorMessage = async (userId, messages, conversationId = null) => {
+  const payload = {
     user_id: userId,
-    messages: messages
+    messages: messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }))
   };
-  
-  // Если есть conversation_id → передаём
+
   if (conversationId) {
-    body.conversation_id = conversationId;
+    payload.conversation_id = conversationId;
   }
-  
+
   const response = await fetch(`${API_BASE}/constructor/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(payload)
   });
-  
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
-  
-  return await response.json();
-}
 
-async function loadConversationHistory(conversationId) {
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status}`);
+  }
+
+  return response.json();
+};
+
+const loadConversationHistory = async (conversationId) => {
   const response = await fetch(`${API_BASE}/constructor/history/${conversationId}`);
-  
   if (!response.ok) {
-    console.warn(`⚠️ Не удалось загрузить историю conversation ${conversationId}`);
-    return [];
+    throw new Error(`Failed to load history: ${response.status}`);
   }
-  
-  const data = await response.json();
-  return data.messages || [];
-}
+  return response.json();
+};
 
-// ============================================================
-// УТИЛИТЫ
-// ============================================================
-
-function cleanMarkdown(text) {
-  if (!text) return text;
-  
-  // Удаляем Markdown форматирование, но оставляем жирный текст
+// Утилиты для Markdown
+const cleanMarkdown = (text) => {
   return text
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // **bold** → <strong>
-    .replace(/\*(.+?)\*/g, '$1')  // *italic* → обычный текст
-    .replace(/`(.+?)`/g, '$1');   // `code` → обычный текст
-}
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br />');
+};
 
-function renderMarkdown(text) {
-  const html = cleanMarkdown(text);
-  return <span dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-// ============================================================
-// ГЛАВНЫЙ КОМПОНЕНТ
-// ============================================================
+const renderMarkdown = (text) => {
+  const cleaned = cleanMarkdown(text);
+  return <span dangerouslySetInnerHTML={{ __html: cleaned }} />;
+};
 
 export default function BuilderChat({ conversationId: propConversationId, onAgentUpdate }) {
   const [userId, setUserId] = useState(null);
-  const [conversationId, setConversationId] = useState(propConversationId);
+  const [conversationId, setConversationId] = useState(propConversationId || null);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [agentStatus, setAgentStatus] = useState(null); // draft, test, active
-  
+  const [agentStatus, setAgentStatus] = useState('draft');
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // ============================================================
-  // ИНИЦИАЛИЗАЦИЯ
-  // ============================================================
-
+  // Инициализация чата
   useEffect(() => {
     initializeChat();
   }, [propConversationId]);
 
-  async function initializeChat() {
-    console.log('🔍 Инициализация чата...', { propConversationId });
+  const initializeChat = async () => {
+    await loadUserId();
     
-    // 1. Загружаем userId
-    const uid = await loadUserId();
-    setUserId(uid);
+    const convId = propConversationId || conversationId;
     
-    // 2. Используем conversation_id из props (URL)
-    const convId = propConversationId;
-    setConversationId(convId);
-    
-    // 3. Загружаем историю
     if (convId) {
-      await loadHistory(convId, uid);
+      setConversationId(convId);
+      await loadHistory(convId);
     } else {
-      // Новый агент — начальное сообщение
-      setMessages([
-        {
-          role: 'assistant',
-          content: `Привет! 👋 Я помогу создать вашего AI-агента для продаж.
-
-**Расскажите о вашем бизнесе:**
-• Чем занимаетесь?
-• Что предлагаете и по какой цене?`
-        }
-      ]);
-      setAgentStatus(null);
-    }
-  }
-
-  async function loadUserId() {
-    // Пробуем загрузить из localStorage
-    let uid = localStorage.getItem(USER_ID_KEY);
-    
-    if (uid) {
-      console.log('✅ User ID from localStorage:', uid);
-      return uid;
-    }
-    
-    // Пробуем получить из Base44
-    try {
-      if (window.base44 && window.base44.auth) {
-        const user = await window.base44.auth.me();
-        if (user && user.id) {
-          uid = user.id;
-          localStorage.setItem(USER_ID_KEY, uid);
-          console.log('✅ User ID from Base44:', uid);
-          return uid;
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Не удалось загрузить user через Base44:', error);
-    }
-    
-    // Создаём временный ID
-    uid = 'temp-user-' + Date.now();
-    localStorage.setItem(USER_ID_KEY, uid);
-    console.log('⚠️ Создан временный User ID:', uid);
-    
-    return uid;
-  }
-
-  async function loadHistory(convId, uid) {
-    console.log(`📖 Загрузка истории conversation: ${convId}`);
-    
-    try {
-      // Пробуем загрузить с backend
-      const historyMessages = await loadConversationHistory(convId);
-      
-      if (historyMessages.length > 0) {
-        console.log(`✅ История загружена: ${historyMessages.length} сообщений`);
-        setMessages(historyMessages);
-        saveHistoryToStorage(convId, historyMessages);
-        
-        // Определяем статус агента из истории
-        detectAgentStatus(historyMessages);
-        return;
-      }
-    } catch (error) {
-      console.error('❌ Ошибка загрузки истории:', error);
-    }
-    
-    // Если не удалось загрузить — пробуем localStorage
-    const storageKey = `${STORAGE_KEY_PREFIX}${convId}`;
-    const stored = localStorage.getItem(storageKey);
-    
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        console.log(`📦 История из localStorage: ${parsed.length} сообщений`);
-        setMessages(parsed);
-        detectAgentStatus(parsed);
-      } catch (error) {
-        console.error('❌ Ошибка парсинга истории:', error);
-      }
-    }
-  }
-
-  function detectAgentStatus(msgs) {
-    // ✅ Исправленная логика определения статуса
-    
-    // Ищем последний статус агента в истории
-    for (let i = msgs.length - 1; i >= 0; i--) {
-      const msg = msgs[i];
-      
-      if (msg.role === 'assistant') {
-        const content = msg.content.toLowerCase();
-        
-        // Проверяем маркеры статусов
-        if (content.includes('🎉') && content.includes('готов к тестированию')) {
-          setAgentStatus('test');
-          return;
-        }
-        
-        if (content.includes('✅ агент обновлён')) {
-          setAgentStatus('test');
-          return;
-        }
-        
-        if (content.includes('агент активен') || content.includes('🟢')) {
-          setAgentStatus('active');
-          return;
-        }
-      }
-    }
-    
-    // Если ничего не нашли — проверяем, есть ли сообщения пользователя
-    const hasUserMessages = msgs.some(m => m.role === 'user');
-    
-    if (hasUserMessages) {
+      const greeting = {
+        role: 'assistant',
+        content: 'Привет! 👋 Я помогу создать вашего AI-агента для продаж.\n\n**Давайте начнем!** Расскажите:\n• Какой у вас бизнес?\n• Какие услуги или товары вы предлагаете?\n• Какие у вас цены?'
+      };
+      setMessages([greeting]);
       setAgentStatus('draft');
-    } else {
-      setAgentStatus(null);
     }
-  }
+  };
 
-  function saveHistoryToStorage(convId, msgs) {
-    if (!convId) return;
+  const loadUserId = async () => {
+    let id = localStorage.getItem(USER_ID_KEY);
     
-    const storageKey = `${STORAGE_KEY_PREFIX}${convId}`;
-    localStorage.setItem(storageKey, JSON.stringify(msgs));
-  }
+    if (!id) {
+      try {
+        if (window.base44?.auth?.me) {
+          const user = await window.base44.auth.me();
+          id = user.id;
+        }
+      } catch (error) {
+        console.error('Failed to load user from Base44:', error);
+      }
+      
+      if (!id) {
+        id = `temp-user-${Date.now()}`;
+      }
+      
+      localStorage.setItem(USER_ID_KEY, id);
+    }
+    
+    setUserId(id);
+  };
 
-  // ============================================================
-  // ОТПРАВКА СООБЩЕНИЯ
-  // ============================================================
-
-  async function handleSendMessage(e) {
-    e?.preventDefault();
-    
-    if (!inputValue.trim() || isLoading || !userId) return;
-    
-    const userMessage = inputValue.trim();
-    setInputValue('');
-    
-    // Добавляем сообщение пользователя
-    const updatedMessages = [
-      ...messages,
-      { role: 'user', content: userMessage }
-    ];
-    setMessages(updatedMessages);
-    
-    setIsLoading(true);
-    
+  const loadHistory = async (convId) => {
     try {
-      console.log('📤 Отправка сообщения...', { userId, conversationId });
+      const history = await loadConversationHistory(convId);
       
-      const result = await sendConstructorMessage(userId, updatedMessages, conversationId);
-      
-      console.log('📥 Ответ от Backend:', result);
-      
-      // Если получили новый conversation_id (первое сообщение)
-      if (result.conversation_id && !conversationId) {
-        const newConvId = result.conversation_id;
-        setConversationId(newConvId);
-        
-        // Обновляем URL
-        const newUrl = `/AgentBuilder?conversationId=${newConvId}`;
-        window.history.replaceState({}, '', newUrl);
-        console.log('🔗 URL обновлён:', newUrl);
+      if (history.messages && history.messages.length > 0) {
+        setMessages(history.messages);
+        const status = detectAgentStatus(history.messages);
+        setAgentStatus(status);
       }
-      
-      // Обработка ответа
-      if (result.status === 'agent_ready' && result.agent_data) {
-        // Агент создан (draft → test)
-        handleAgentReady(result, updatedMessages);
-      } else if (result.status === 'agent_updated' && result.agent_data) {
-        // Агент обновлён
-        handleAgentUpdated(result, updatedMessages);
-      } else {
-        // Обычный ответ
-        const finalMessages = [
-          ...updatedMessages,
-          { role: 'assistant', content: result.response }
-        ];
-        setMessages(finalMessages);
-        saveHistoryToStorage(conversationId || result.conversation_id, finalMessages);
-      }
-      
     } catch (error) {
-      console.error('❌ Ошибка отправки:', error);
-      const errorMessages = [
-        ...updatedMessages,
-        { role: 'assistant', content: '❌ Ошибка отправки сообщения. Попробуйте ещё раз.' }
-      ];
-      setMessages(errorMessages);
+      console.error('Failed to load history, trying localStorage:', error);
+      
+      const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${convId}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setMessages(parsed.messages || []);
+          setAgentStatus(parsed.status || 'draft');
+        } catch (parseError) {
+          console.error('Failed to parse stored history:', parseError);
+        }
+      }
+    }
+  };
+
+  // Улучшенная функция определения статуса агента
+  const detectAgentStatus = (msgs) => {
+    const lastAssistantMessages = msgs
+      .filter(m => m.role === 'assistant')
+      .slice(-3);
+
+    for (const msg of lastAssistantMessages.reverse()) {
+      const content = msg.content.toLowerCase();
+      
+      if (content.includes('---agent-ready---') || 
+          content.includes('агент готов к тестированию') ||
+          content.includes('можете протестировать')) {
+        return 'test';
+      }
+      
+      if (content.includes('---agent-update---') ||
+          content.includes('обновил') ||
+          content.includes('изменения внесены')) {
+        return 'active';
+      }
+    }
+
+    return 'draft';
+  };
+
+  const saveHistory = (msgs, convId, status) => {
+    if (convId) {
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}${convId}`, JSON.stringify({
+        messages: msgs,
+        status: status,
+        updated_at: new Date().toISOString()
+      }));
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading || !userId) return;
+
+    const userMessage = {
+      role: 'user',
+      content: inputValue.trim()
+    };
+
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    setInputValue('');
+    setIsLoading(true);
+
+    try {
+      const result = await sendConstructorMessage(userId, updatedMessages, conversationId);
+
+      // Обновляем conversation_id, если получили новый
+      if (result.conversation_id && !conversationId) {
+        setConversationId(result.conversation_id);
+        
+        // Обновляем URL с новым conversationId
+        const url = new URL(window.location);
+        url.searchParams.set('conversationId', result.conversation_id);
+        window.history.pushState({}, '', url);
+      }
+
+      // Обработка статуса agent_ready (агент создан)
+      if (result.status === 'agent_ready' && result.agent_data) {
+        const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
+        
+        // Выбираем аватарку по имени
+        const avatar_url = agent_name.toLowerCase().includes('виктори')
+          ? DEFAULT_AVATAR_VICTORIA
+          : DEFAULT_AVATAR_ALEXANDER;
+
+        const successMessage = {
+          role: 'assistant',
+          content: result.response || `✅ Отлично! Агент **${agent_name}** создан и готов к тестированию.\n\nВы можете перейти во вкладку **Настроить** для редактирования или протестировать агента в **Предпросмотре**.`
+        };
+
+        const finalMessages = [...updatedMessages, successMessage];
+        setMessages(finalMessages);
+        setAgentStatus('test');
+
+        if (onAgentUpdate) {
+          onAgentUpdate({
+            name: agent_name,
+            avatar_url,
+            business_type,
+            description: description || '',
+            instructions: instructions || '',
+            knowledge_base: knowledge_base || {},
+            status: 'test',
+            external_agent_id: result.agent_id
+          });
+        }
+
+        saveHistory(finalMessages, result.conversation_id || conversationId, 'test');
+      }
+      // Обработка статуса agent_updated (агент обновлен)
+      else if (result.status === 'agent_updated' && result.agent_data) {
+        const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
+
+        const updateMessage = {
+          role: 'assistant',
+          content: result.response || `✅ Изменения сохранены! Агент **${agent_name}** обновлен.`
+        };
+
+        const finalMessages = [...updatedMessages, updateMessage];
+        setMessages(finalMessages);
+
+        if (onAgentUpdate) {
+          onAgentUpdate({
+            name: agent_name,
+            business_type,
+            description: description || '',
+            instructions: instructions || '',
+            knowledge_base: knowledge_base || {},
+            status: agentStatus
+          });
+        }
+
+        saveHistory(finalMessages, result.conversation_id || conversationId, agentStatus);
+      }
+      // Обычный ответ
+      else {
+        const assistantMessage = {
+          role: 'assistant',
+          content: result.response
+        };
+
+        const finalMessages = [...updatedMessages, assistantMessage];
+        setMessages(finalMessages);
+
+        const newStatus = detectAgentStatus(finalMessages);
+        setAgentStatus(newStatus);
+
+        saveHistory(finalMessages, result.conversation_id || conversationId, newStatus);
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      const errorMessage = {
+        role: 'assistant',
+        content: '❌ Произошла ошибка при отправке сообщения. Попробуйте еще раз.'
+      };
+
+      setMessages([...updatedMessages, errorMessage]);
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
-  function handleAgentReady(result, updatedMessages) {
-    const agent_data = result.agent_data;
-    
-    // ✅ Определяем аватарку (статическая по умолчанию)
-    const avatarUrl = agent_data.agent_name.toLowerCase().includes('виктори')
-      ? DEFAULT_AVATAR_VICTORIA
-      : DEFAULT_AVATAR_ALEXANDER;
-    
-    // Сообщение в чат
-    const successMessage = {
-      role: 'assistant',
-      content: `🎉 **Агент создан и готов к тестированию!**
-
-Ваш агент **${agent_data.agent_name}** готов к работе.
-Протестируйте его в разделе "Предпросмотр" →
-
-Если хотите что-то изменить — просто напишите мне!`
-    };
-    
-    const finalMessages = [...updatedMessages, successMessage];
-    setMessages(finalMessages);
-    saveHistoryToStorage(conversationId || result.conversation_id, finalMessages);
-    
-    // Обновляем статус
-    setAgentStatus('test');
-    
-    // Передаём данные агента в родительский компонент
-    if (onAgentUpdate) {
-      onAgentUpdate({
-        name: agent_data.agent_name,
-        business_type: agent_data.business_type,
-        description: agent_data.description,
-        instructions: agent_data.instructions,
-        knowledge_base: agent_data.knowledge_base, // ✅ Объект
-        avatar_url: avatarUrl,
-        external_agent_id: result.agent_id,
-        status: 'test'
-      });
-    }
-  }
-
-  function handleAgentUpdated(result, updatedMessages) {
-    const agent_data = result.agent_data;
-    
-    // ✅ Определяем аватарку
-    const avatarUrl = agent_data.agent_name.toLowerCase().includes('виктори')
-      ? DEFAULT_AVATAR_VICTORIA
-      : DEFAULT_AVATAR_ALEXANDER;
-    
-    // Сообщение в чат
-    const successMessage = {
-      role: 'assistant',
-      content: '✅ **Агент обновлён!** Изменения сразу применены.'
-    };
-    
-    const finalMessages = [...updatedMessages, successMessage];
-    setMessages(finalMessages);
-    saveHistoryToStorage(conversationId || result.conversation_id, finalMessages);
-    
-    // Передаём обновлённые данные
-    if (onAgentUpdate) {
-      onAgentUpdate({
-        name: agent_data.agent_name,
-        business_type: agent_data.business_type,
-        description: agent_data.description,
-        instructions: agent_data.instructions,
-        knowledge_base: agent_data.knowledge_base, // ✅ Объект
-        avatar_url: avatarUrl,
-        external_agent_id: result.agent_id,
-        status: 'test'
-      });
-    }
-  }
-
-  // ============================================================
-  // UI HANDLERS
-  // ============================================================
-
-  function handleKeyDown(e) {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage(e);
+      handleSendMessage();
     }
-  }
+  };
 
   useEffect(() => {
-    // Автоскролл вниз
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
-    // Автоматическое растяжение textarea
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
   }, [inputValue]);
 
-  // ============================================================
-  // RENDER
-  // ============================================================
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Статус агента */}
-      {agentStatus && (
-        <div style={{
-          padding: '12px 20px',
-          backgroundColor: agentStatus === 'draft' ? '#fef3c7' : agentStatus === 'test' ? '#dbeafe' : '#d1fae5',
-          borderBottom: '1px solid #e5e7eb',
-          fontSize: '14px',
-          color: '#374151'
-        }}>
-          {agentStatus === 'draft' && '🟡 Агент в разработке...'}
-          {agentStatus === 'test' && '🔵 Агент готов к тестированию'}
-          {agentStatus === 'active' && '🟢 Агент активен'}
+    <div className="flex flex-col h-full">
+      {/* Status Banner */}
+      {agentStatus !== 'draft' && (
+        <div className={`px-4 py-2 text-sm ${
+          agentStatus === 'test' ? 'bg-yellow-50 text-yellow-800' :
+          agentStatus === 'active' ? 'bg-green-50 text-green-800' :
+          'bg-gray-50 text-gray-800'
+        }`}>
+          <strong>Статус:</strong> {
+            agentStatus === 'test' ? '🧪 Тестирование' :
+            agentStatus === 'active' ? '✅ Активен' :
+            '📝 Черновик'
+          }
         </div>
       )}
-      
-      {/* Список сообщений */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '20px',
-        backgroundColor: '#f9fafb'
-      }}>
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              display: 'flex',
-              justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-              marginBottom: '16px'
-            }}
-          >
-            <div
-              style={{
-                maxWidth: '70%',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                backgroundColor: msg.role === 'user' ? '#3b82f6' : '#ffffff',
-                color: msg.role === 'user' ? '#ffffff' : '#111827',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
-              }}
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <AnimatePresence>
+          {messages.map((message, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {renderMarkdown(msg.content)}
-            </div>
-          </div>
-        ))}
-        
-        {/* Индикатор загрузки */}
+              <div className={`flex gap-3 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                  message.role === 'user' 
+                    ? 'bg-indigo-600' 
+                    : 'bg-gradient-to-br from-purple-500 to-indigo-600'
+                }`}>
+                  {message.role === 'user' ? (
+                    <User className="h-5 w-5 text-white" />
+                  ) : (
+                    <Bot className="h-5 w-5 text-white" />
+                  )}
+                </div>
+                <div className={`px-4 py-3 rounded-2xl ${
+                  message.role === 'user'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-900'
+                }`}>
+                  <div className="text-sm leading-relaxed">
+                    {renderMarkdown(message.content)}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
         {isLoading && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6b7280' }}>
-            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-            <span>Думаю...</span>
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex justify-start"
+          >
+            <div className="flex gap-3 max-w-[80%]">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                <Bot className="h-5 w-5 text-white" />
+              </div>
+              <div className="px-4 py-3 rounded-2xl bg-gray-100">
+                <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+              </div>
+            </div>
+          </motion.div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
-      
-      {/* Форма ввода */}
-      <form
-        onSubmit={handleSendMessage}
-        style={{
-          padding: '20px',
-          borderTop: '1px solid #e5e7eb',
-          backgroundColor: '#ffffff'
-        }}
-      >
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-          <textarea
+
+      {/* Input Area */}
+      <div className="border-t bg-white p-4">
+        <div className="flex gap-2">
+          <Textarea
             ref={textareaRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Напишите сообщение... (Enter — отправить, Shift+Enter — новая строка)"
-            disabled={isLoading || !userId}
-            style={{
-              flex: 1,
-              minHeight: '44px',
-              maxHeight: '200px',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '14px',
-              resize: 'none',
-              outline: 'none',
-              fontFamily: 'inherit'
-            }}
+            placeholder={
+              agentStatus === 'draft' 
+                ? "Расскажите о вашем бизнесе..." 
+                : "Введите сообщение..."
+            }
+            className="resize-none min-h-[44px] max-h-[200px]"
+            rows={1}
           />
-          
-          <button
-            type="submit"
-            disabled={isLoading || !inputValue.trim() || !userId}
-            style={{
-              padding: '12px 20px',
-              backgroundColor: isLoading || !inputValue.trim() ? '#d1d5db' : '#3b82f6',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: isLoading || !inputValue.trim() ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
+          <Button
+            onClick={handleSendMessage}
+            disabled={isLoading || !inputValue.trim()}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4"
           >
             {isLoading ? (
-              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Send size={18} />
+              <Send className="h-5 w-5" />
             )}
-          </button>
+          </Button>
         </div>
         
-        {/* Дебаг информация */}
-        <div style={{ marginTop: '8px', fontSize: '12px', color: '#9ca3af' }}>
-          User ID: {userId || 'загрузка...'} | Conversation: {conversationId || 'новый'}
+        {/* Debug Info */}
+        <div className="mt-2 text-xs text-gray-500 space-y-1">
+          <div>User ID: {userId || 'Loading...'}</div>
+          <div>Conversation: {conversationId || 'New'}</div>
         </div>
-      </form>
-      
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      </div>
     </div>
   );
 }
