@@ -11,6 +11,11 @@ const STORAGE_KEY_PREFIX = 'neuro_seller_conversation_';
 const USER_ID_KEY = 'neuro_seller_user_id';
 const API_BASE = 'https://neuro-seller-production.up.railway.app/api/v1';
 
+// ✅ Статические аватарки по умолчанию
+const DEFAULT_AVATAR_VICTORIA = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Victoria&style=circle&backgroundColor=fef3c7&hair=longHair&hairColor=auburn&accessories=prescription02&clothingColor=3c4f5c&top=longHairStraight&accessoriesColor=262e33&facialHairColor=auburn&clothesColor=262e33&graphicType=skull&eyeType=happy&eyebrowType=default&mouthType=smile&skinColor=light';
+
+const DEFAULT_AVATAR_ALEXANDER = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alexander&style=circle&backgroundColor=c0aede&hair=shortHairShortWaved&hairColor=brown&accessories=prescription01&clothingColor=black&top=shortHairShortWaved&accessoriesColor=262e33&facialHairColor=black&clothesColor=heather&graphicType=bat&eyeType=default&eyebrowType=default&mouthType=default&skinColor=light';
+
 // ============================================================
 // API HELPERS
 // ============================================================
@@ -70,32 +75,13 @@ function renderMarkdown(text) {
   return <span dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-function getConversationIdFromURL() {
-  // Получаем conversation_id из URL
-  // /constructor → null (новый агент)
-  // /constructor/{conversation_id} → conversation_id
-  
-  const url = new URL(window.location.href);
-  const pathParts = url.pathname.split('/').filter(Boolean);
-  
-  // Если путь /constructor/{id}
-  if (pathParts.length >= 2 && pathParts[0] === 'constructor') {
-    const id = pathParts[1];
-    console.log('🆔 Conversation ID from URL:', id);
-    return id;
-  }
-  
-  console.log('🆔 No conversation ID (new agent)');
-  return null;
-}
-
 // ============================================================
 // ГЛАВНЫЙ КОМПОНЕНТ
 // ============================================================
 
-export default function BuilderChat({ onAgentUpdate }) {
+export default function BuilderChat({ conversationId: propConversationId, onAgentUpdate }) {
   const [userId, setUserId] = useState(null);
-  const [conversationId, setConversationId] = useState(null);
+  const [conversationId, setConversationId] = useState(propConversationId);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -110,17 +96,17 @@ export default function BuilderChat({ onAgentUpdate }) {
 
   useEffect(() => {
     initializeChat();
-  }, []);
+  }, [propConversationId]);
 
   async function initializeChat() {
-    console.log('🔍 Инициализация чата...');
+    console.log('🔍 Инициализация чата...', { propConversationId });
     
     // 1. Загружаем userId
     const uid = await loadUserId();
     setUserId(uid);
     
-    // 2. Получаем conversation_id из URL
-    const convId = getConversationIdFromURL();
+    // 2. Используем conversation_id из props (URL)
+    const convId = propConversationId;
     setConversationId(convId);
     
     // 3. Загружаем историю
@@ -138,6 +124,7 @@ export default function BuilderChat({ onAgentUpdate }) {
 • Что предлагаете и по какой цене?`
         }
       ]);
+      setAgentStatus(null);
     }
   }
 
@@ -210,23 +197,41 @@ export default function BuilderChat({ onAgentUpdate }) {
   }
 
   function detectAgentStatus(msgs) {
-    // Определяем статус агента из истории
+    // ✅ Исправленная логика определения статуса
+    
+    // Ищем последний статус агента в истории
     for (let i = msgs.length - 1; i >= 0; i--) {
       const msg = msgs[i];
+      
       if (msg.role === 'assistant') {
-        if (msg.content.includes('🎉 Агент создан')) {
+        const content = msg.content.toLowerCase();
+        
+        // Проверяем маркеры статусов
+        if (content.includes('🎉') && content.includes('готов к тестированию')) {
           setAgentStatus('test');
           return;
         }
-        if (msg.content.includes('✅ Агент обновлён')) {
+        
+        if (content.includes('✅ агент обновлён')) {
           setAgentStatus('test');
+          return;
+        }
+        
+        if (content.includes('агент активен') || content.includes('🟢')) {
+          setAgentStatus('active');
           return;
         }
       }
     }
     
-    // Если не нашли — draft
-    setAgentStatus('draft');
+    // Если ничего не нашли — проверяем, есть ли сообщения пользователя
+    const hasUserMessages = msgs.some(m => m.role === 'user');
+    
+    if (hasUserMessages) {
+      setAgentStatus('draft');
+    } else {
+      setAgentStatus(null);
+    }
   }
 
   function saveHistoryToStorage(convId, msgs) {
@@ -270,8 +275,9 @@ export default function BuilderChat({ onAgentUpdate }) {
         setConversationId(newConvId);
         
         // Обновляем URL
-        window.history.replaceState({}, '', `/constructor/${newConvId}`);
-        console.log('🔗 URL обновлён:', `/constructor/${newConvId}`);
+        const newUrl = `/AgentBuilder?conversationId=${newConvId}`;
+        window.history.replaceState({}, '', newUrl);
+        console.log('🔗 URL обновлён:', newUrl);
       }
       
       // Обработка ответа
@@ -306,10 +312,10 @@ export default function BuilderChat({ onAgentUpdate }) {
   function handleAgentReady(result, updatedMessages) {
     const agent_data = result.agent_data;
     
-    // Определяем аватарку
+    // ✅ Определяем аватарку (статическая по умолчанию)
     const avatarUrl = agent_data.agent_name.toLowerCase().includes('виктори')
-      ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=Victoria&backgroundColor=b6e3f4'
-      : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alexander&backgroundColor=c0aede';
+      ? DEFAULT_AVATAR_VICTORIA
+      : DEFAULT_AVATAR_ALEXANDER;
     
     // Сообщение в чат
     const successMessage = {
@@ -336,7 +342,7 @@ export default function BuilderChat({ onAgentUpdate }) {
         business_type: agent_data.business_type,
         description: agent_data.description,
         instructions: agent_data.instructions,
-        knowledge_base: agent_data.knowledge_base,
+        knowledge_base: agent_data.knowledge_base, // ✅ Объект
         avatar_url: avatarUrl,
         external_agent_id: result.agent_id,
         status: 'test'
@@ -347,10 +353,10 @@ export default function BuilderChat({ onAgentUpdate }) {
   function handleAgentUpdated(result, updatedMessages) {
     const agent_data = result.agent_data;
     
-    // Определяем аватарку
+    // ✅ Определяем аватарку
     const avatarUrl = agent_data.agent_name.toLowerCase().includes('виктори')
-      ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=Victoria&backgroundColor=b6e3f4'
-      : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alexander&backgroundColor=c0aede';
+      ? DEFAULT_AVATAR_VICTORIA
+      : DEFAULT_AVATAR_ALEXANDER;
     
     // Сообщение в чат
     const successMessage = {
@@ -369,7 +375,7 @@ export default function BuilderChat({ onAgentUpdate }) {
         business_type: agent_data.business_type,
         description: agent_data.description,
         instructions: agent_data.instructions,
-        knowledge_base: agent_data.knowledge_base,
+        knowledge_base: agent_data.knowledge_base, // ✅ Объект
         avatar_url: avatarUrl,
         external_agent_id: result.agent_id,
         status: 'test'
@@ -411,7 +417,7 @@ export default function BuilderChat({ onAgentUpdate }) {
       {agentStatus && (
         <div style={{
           padding: '12px 20px',
-          backgroundColor: agentStatus === 'draft' ? '#fef3c7' : '#dbeafe',
+          backgroundColor: agentStatus === 'draft' ? '#fef3c7' : agentStatus === 'test' ? '#dbeafe' : '#d1fae5',
           borderBottom: '1px solid #e5e7eb',
           fontSize: '14px',
           color: '#374151'
