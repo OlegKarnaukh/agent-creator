@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -33,26 +33,8 @@ export default function AgentBuilder() {
         }
     });
 
-    // ✅ ДОБАВЛЕНО: Логирование изменений agentData
-    useEffect(() => {
-        console.log('AgentData updated:', agentData);
-    }, [agentData]);
-
-    // ✅ ДОБАВЛЕНО: Автопереключение на вкладку "Настроить" при создании агента
-    useEffect(() => {
-        if (agentData.external_agent_id && activeTab === 'create') {
-            console.log('Agent created, switching to configure tab');
-            setTimeout(() => setActiveTab('configure'), 500);
-        }
-    }, [agentData.external_agent_id, activeTab]);
-
     const handleAgentUpdate = (updates) => {
-        console.log('handleAgentUpdate called with:', updates);
-        setAgentData(prev => {
-            const newData = { ...prev, ...updates };
-            console.log('New agentData:', newData);
-            return newData;
-        });
+        setAgentData(prev => ({ ...prev, ...updates }));
     };
 
     const handleSave = async () => {
