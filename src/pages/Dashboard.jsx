@@ -19,10 +19,42 @@ export default function Dashboard() {
     
     const [selectedAgent, setSelectedAgent] = useState(null);
 
-    const { data: agents = [], isLoading: agentsLoading } = useQuery({
-        queryKey: ['agents'],
-        queryFn: () => base44.entities.Agent.list('-created_date'),
+    // ✅ НОВОЕ: Загрузка через /constructor/conversations
+    const { data: conversationsData = [], isLoading: agentsLoading } = useQuery({
+        queryKey: ['agentConversations'],
+        queryFn: async () => {
+            const user = await base44.auth.me();
+            if (!user?.id) return [];
+            
+            const response = await fetch(
+                `https://neuro-seller-production.up.railway.app/api/v1/constructor/conversations/${user.id}`
+            );
+            
+            if (!response.ok) return [];
+            
+            const data = await response.json();
+            
+            // Фильтруем только те, у которых есть агент
+            return data.filter(conv => conv.agent !== null);
+        },
     });
+
+    // ✅ Преобразуем conversations в формат agents
+    const agents = conversationsData.map(conv => ({
+        id: conv.agent.id,
+        conversation_id: conv.id, // ✅ ВАЖНО
+        name: conv.agent.agent_name,
+        business_type: conv.agent.business_type,
+        status: conv.agent.status,
+        avatar_url: conv.agent.avatar_url,
+        persona: conv.agent.persona,
+        stats: {
+            total_conversations: 0,
+            conversion_rate: 0,
+            today_conversations: 0
+        },
+        channels: []
+    }));
 
     const { data: conversations = [] } = useQuery({
         queryKey: ['conversations', selectedAgent?.id],
