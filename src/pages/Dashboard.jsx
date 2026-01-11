@@ -1,12 +1,11 @@
 // ========================================
 // FINAL VERSION: Pages/Dashboard
 // Дата: 2026-01-11
-// Логика: Dashboard всегда показывается, даже если агентов нет
+// Исправлено: импорт base44
 // ========================================
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import base44 from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Plus, MessageSquare, Users, TrendingUp, Loader2, Bot } from 'lucide-react';
@@ -25,7 +24,8 @@ export default function Dashboard() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        // Используем window.base44 напрямую
+        const currentUser = await window.base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error('Failed to load user:', error);
