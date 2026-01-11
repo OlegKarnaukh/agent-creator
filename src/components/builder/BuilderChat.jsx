@@ -5,7 +5,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2, Paperclip } from 'lucide-react';
 import { sendConstructorMessage } from '@/components/api/constructorApi';
 
-// 🔑 Ключ для хранения истории в localStorage
 const STORAGE_KEY = 'neuro_seller_constructor_history';
 
 export default function BuilderChat({ onAgentUpdate, agentData }) {
@@ -18,157 +17,148 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [files, setFiles] = useState([]);
     const messagesEndRef = useRef(null);
-    const fileInputRef = useRef(null);
 
-    // 📂 Загружаем userId при монтировании
+    // Загружаем userId
     useEffect(() => {
-        const loadUserId = async () => {
+        const loadUser = async () => {
             try {
                 const user = await base44.auth.me();
+                console.log('✅ User loaded:', user);
                 if (user?.id) {
                     setUserId(user.id);
-                    console.log('✅ User ID loaded:', user.id);
-                    
-                    // Загружаем историю из localStorage
                     loadHistory(user.id);
+                } else {
+                    console.error('❌ User ID not found');
                 }
             } catch (error) {
-                console.error('❌ Ошибка загрузки пользователя:', error);
+                console.error('❌ Error loading user:', error);
             }
         };
-
-        loadUserId();
+        loadUser();
     }, []);
 
-    // 📚 Загрузка истории из localStorage или Backend
+    // Загрузка истории
     const loadHistory = async (uid) => {
         try {
             const storageKey = `${STORAGE_KEY}_${uid}`;
-            const savedHistory = localStorage.getItem(storageKey);
+            const saved = localStorage.getItem(storageKey);
             
-            if (savedHistory) {
-                const parsedHistory = JSON.parse(savedHistory);
-                console.log('✅ История загружена из localStorage:', parsedHistory.length, 'сообщений');
-                setMessages(parsedHistory);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                console.log('✅ History from localStorage:', parsed.length);
+                setMessages(parsed);
                 return;
             }
             
-            // Если localStorage пуст — загружаем из Backend
-            console.log('📡 Загружаем историю из Backend...');
-            const response = await fetch(`https://neuro-seller-production.up.railway.app/api/v1/constructor/history/${uid}`);
+            // Загрузка из Backend
+            const response = await fetch(
+                `https://neuro-seller-production.up.railway.app/api/v1/constructor/history/${uid}`
+            );
             
             if (response.ok) {
                 const data = await response.json();
-                if (data.messages && data.messages.length > 0) {
-                    console.log('✅ История загружена из Backend:', data.messages.length, 'сообщений');
+                if (data.messages?.length > 0) {
+                    console.log('✅ History from Backend:', data.messages.length);
                     setMessages(data.messages);
-                    // Сохраняем в localStorage для быстрого доступа
                     saveHistory(data.messages, uid);
                 }
             }
         } catch (error) {
-            console.error('❌ Ошибка загрузки истории:', error);
+            console.error('❌ Error loading history:', error);
         }
     };
 
-    // 💾 Сохранение истории в localStorage
+    // Сохранение истории
     const saveHistory = (msgs, uid = userId) => {
         if (!uid) return;
-        
         try {
             const storageKey = `${STORAGE_KEY}_${uid}`;
             localStorage.setItem(storageKey, JSON.stringify(msgs));
-            console.log('💾 История сохранена в localStorage');
+            console.log('💾 History saved');
         } catch (error) {
-            console.error('❌ Ошибка сохранения истории:', error);
+            console.error('❌ Error saving history:', error);
         }
     };
 
-    // 📤 Отправка сообщения
+    // Отправка сообщения
     const handleSendMessage = async () => {
-        if (!input.trim() || !userId || isLoading) return;
+        console.log('📤 handleSendMessage called');
+        console.log('   input:', input);
+        console.log('   userId:', userId);
+        console.log('   isLoading:', isLoading);
+
+        if (!input.trim()) {
+            console.log('❌ Input is empty');
+            return;
+        }
+
+        if (!userId) {
+            console.error('❌ userId is null');
+            alert('Ошибка: не удалось загрузить ID пользователя. Попробуйте обновить страницу.');
+            return;
+        }
+
+        if (isLoading) {
+            console.log('⏳ Already loading');
+            return;
+        }
 
         const userMessage = { role: 'user', content: input.trim() };
         const updatedMessages = [...messages, userMessage];
         
+        console.log('✅ Adding user message:', userMessage);
         setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
 
         try {
-            console.log('📤 Отправка сообщения:', userMessage.content);
-            
+            console.log('📡 Sending to Backend...');
             const result = await sendConstructorMessage(userId, updatedMessages);
+            console.log('📥 Backend response:', result);
             
-            console.log('📥 Получен ответ от Backend:', result);
-            
-            // 🎯 Обработка СОЗДАНИЯ агента (AGENT-READY)
+            // СОЗДАНИЕ агента
             if (result.status === 'agent_ready' && result.agent_data) {
-                console.log('✅ Agent created:', result.agent_id);
-                console.log('Agent data:', result.agent_data);
+                console.log('✅ AGENT CREATED');
                 
                 const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
-                const agentId = result.agent_id;
                 
-                // Определяем аватар
-                const lowerName = agent_name.toLowerCase();
-                const isFemale = lowerName.includes('виктори') || 
-                                lowerName.includes('анна') || 
-                                lowerName.includes('мария') || 
-                                lowerName.includes('елена');
-                
+                const isFemale = agent_name.toLowerCase().includes('виктори');
                 const avatarUrl = isFemale
                     ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
                     : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
                 
-                // Финальное сообщение для пользователя
                 const finalMessage = {
                     role: 'assistant',
-                    content: `🎉 Отлично! Агент "${agent_name}" для "${business_type}" создан!\n\nТеперь:\n1️⃣ Протестируй агента в окне предпросмотра справа\n2️⃣ Нажми "Сохранить" для активации\n3️⃣ Настрой каналы связи (Telegram, WhatsApp)`
+                    content: `🎉 Отлично! Агент "${agent_name}" создан!\n\nТеперь:\n1️⃣ Протестируй в предпросмотре справа\n2️⃣ Нажми "Сохранить" для активации\n3️⃣ Настрой каналы связи`
                 };
                 
                 const finalMessages = [...updatedMessages, finalMessage];
                 setMessages(finalMessages);
-                
-                // Сохраняем историю
                 saveHistory(finalMessages);
                 
-                // Передаём данные агента родителю
                 onAgentUpdate({
                     name: agent_name,
                     business_type: business_type,
                     description: description || business_type,
                     instructions: instructions || '',
-                    knowledge_base: typeof knowledge_base === 'string' 
-                        ? knowledge_base 
-                        : JSON.stringify(knowledge_base, null, 2),
+                    knowledge_base: typeof knowledge_base === 'string' ? knowledge_base : JSON.stringify(knowledge_base, null, 2),
                     avatar_url: avatarUrl,
-                    external_agent_id: agentId,
+                    external_agent_id: result.agent_id,
                     status: 'draft'
                 });
             }
-            // 🔄 Обработка ОБНОВЛЕНИЯ агента (AGENT-UPDATE)
+            // ОБНОВЛЕНИЕ агента
             else if (result.status === 'agent_updated' && result.agent_data) {
-                console.log('✅ Agent updated:', result.agent_id);
-                console.log('Updated data:', result.agent_data);
+                console.log('✅ AGENT UPDATED');
                 
                 const { agent_name, business_type, description, instructions, knowledge_base } = result.agent_data;
-                const agentId = result.agent_id;
                 
-                // Определяем аватар (используем существующий или пересоздаём)
-                const lowerName = agent_name.toLowerCase();
-                const isFemale = lowerName.includes('виктори') || 
-                                lowerName.includes('анна') || 
-                                lowerName.includes('мария') || 
-                                lowerName.includes('елена');
-                
+                const isFemale = agent_name.toLowerCase().includes('виктори');
                 const avatarUrl = isFemale
                     ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
                     : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
                 
-                // Финальное сообщение об обновлении
                 const updateMessage = {
                     role: 'assistant',
                     content: `✅ Агент "${agent_name}" обновлён!\n\nИзменения применены. Можешь протестировать в окне предпросмотра →`
@@ -176,39 +166,35 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 
                 const finalMessages = [...updatedMessages, updateMessage];
                 setMessages(finalMessages);
-                
-                // Сохраняем историю
                 saveHistory(finalMessages);
                 
-                // Передаём обновлённые данные родителю
                 onAgentUpdate({
                     name: agent_name,
                     business_type: business_type,
                     description: description || business_type,
                     instructions: instructions || '',
-                    knowledge_base: typeof knowledge_base === 'string' 
-                        ? knowledge_base 
-                        : JSON.stringify(knowledge_base, null, 2),
+                    knowledge_base: typeof knowledge_base === 'string' ? knowledge_base : JSON.stringify(knowledge_base, null, 2),
                     avatar_url: avatarUrl,
-                    external_agent_id: agentId,
+                    external_agent_id: result.agent_id,
                     status: 'draft'
                 });
             }
-            // 💬 Обычный ответ (продолжение диалога)
+            // Обычный ответ
             else if (result.response) {
+                console.log('💬 Normal response');
                 const assistantMessage = { role: 'assistant', content: result.response };
                 const finalMessages = [...updatedMessages, assistantMessage];
                 setMessages(finalMessages);
-                
-                // Сохраняем историю
                 saveHistory(finalMessages);
+            } else {
+                console.error('❌ Unexpected response format:', result);
             }
             
         } catch (error) {
-            console.error('❌ Ошибка отправки сообщения:', error);
+            console.error('❌ Send message error:', error);
             const errorMessage = { 
                 role: 'assistant', 
-                content: '❌ Произошла ошибка. Попробуйте ещё раз.' 
+                content: `❌ Ошибка: ${error.message}. Попробуйте ещё раз.` 
             };
             setMessages([...updatedMessages, errorMessage]);
         } finally {
@@ -216,20 +202,13 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         }
     };
 
-    // 📂 Обработка файлов
-    const handleFileChange = (e) => {
-        const selectedFiles = Array.from(e.target.files);
-        setFiles(prev => [...prev, ...selectedFiles]);
-    };
-
-    // 📜 Автоскролл вниз
+    // Автоскролл
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800">
-            {/* Сообщения */}
             <ScrollArea className="flex-1 p-6">
                 <div className="space-y-4">
                     {messages.map((message, index) => (
@@ -259,30 +238,17 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 </div>
             </ScrollArea>
 
-            {/* Поле ввода */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <div className="flex items-end gap-2">
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        className="hidden"
-                        onChange={handleFileChange}
-                    />
-                    
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isLoading}
-                    >
-                        <Paperclip className="h-5 w-5" />
-                    </Button>
-
                     <Input
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                            }
+                        }}
                         placeholder="Расскажите о своём бизнесе..."
                         disabled={isLoading}
                         className="flex-1"
@@ -290,7 +256,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
 
                     <Button 
                         onClick={handleSendMessage} 
-                        disabled={isLoading || !input.trim()}
+                        disabled={isLoading || !input.trim() || !userId}
                     >
                         {isLoading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
@@ -299,17 +265,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                         )}
                     </Button>
                 </div>
-
-                {/* Прикреплённые файлы */}
-                {files.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {files.map((file, index) => (
-                            <div key={index} className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                                {file.name}
-                            </div>
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     );
