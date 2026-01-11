@@ -7,6 +7,7 @@ import { sendConstructorMessage } from '@/components/api/constructorApi';
 
 const STORAGE_KEY = 'neuro_seller_constructor_history';
 const USER_ID_KEY = 'neuro_seller_user_id';
+const AGENT_DATA_KEY = 'neuro_seller_agent_data'; // 🔑 Ключ для данных агента
 
 export default function BuilderChat({ onAgentUpdate, agentData }) {
     const [userId, setUserId] = useState(null);
@@ -74,6 +75,9 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 const parsed = JSON.parse(saved);
                 console.log('✅ History from localStorage:', parsed.length);
                 setMessages(parsed);
+                
+                // 🔥 НОВОЕ: Восстанавливаем данные агента из истории
+                restoreAgentFromHistory(parsed, uid);
                 return;
             }
             
@@ -87,10 +91,42 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     console.log('✅ History from Backend:', data.messages.length);
                     setMessages(data.messages);
                     saveHistory(data.messages, uid);
+                    
+                    // 🔥 НОВОЕ: Восстанавливаем данные агента из истории
+                    restoreAgentFromHistory(data.messages, uid);
                 }
             }
         } catch (error) {
             console.error('❌ Error loading history:', error);
+        }
+    };
+
+    // 🔥 НОВАЯ ФУНКЦИЯ: Восстановление агента из истории
+    const restoreAgentFromHistory = (msgs, uid) => {
+        try {
+            // Проверяем localStorage на сохранённые данные агента
+            const agentStorageKey = `${AGENT_DATA_KEY}_${uid}`;
+            const savedAgentData = localStorage.getItem(agentStorageKey);
+            
+            if (savedAgentData) {
+                const agentData = JSON.parse(savedAgentData);
+                console.log('✅ Restored agent from localStorage:', agentData);
+                onAgentUpdate(agentData);
+                return;
+            }
+            
+            // Если нет в localStorage, проверяем историю сообщений
+            // Ищем последнее сообщение с созданием/обновлением агента
+            const agentCreatedMessage = msgs.find(msg => 
+                msg.role === 'assistant' && 
+                (msg.content.includes('🎉 Агент') || msg.content.includes('✅ Агент'))
+            );
+            
+            if (agentCreatedMessage) {
+                console.log('⚠️ Agent was created but data not saved. Need to re-create.');
+            }
+        } catch (error) {
+            console.error('❌ Error restoring agent:', error);
         }
     };
 
@@ -106,16 +142,26 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         }
     };
 
+    // 🔥 НОВАЯ ФУНКЦИЯ: Сохранение данных агента
+    const saveAgentData = (agentData, uid = userId) => {
+        if (!uid) return;
+        try {
+            const agentStorageKey = `${AGENT_DATA_KEY}_${uid}`;
+            localStorage.setItem(agentStorageKey, JSON.stringify(agentData));
+            console.log('💾 Agent data saved');
+        } catch (error) {
+            console.error('❌ Error saving agent data:', error);
+        }
+    };
+
     // Рендеринг Markdown (только bold)
     const renderMarkdown = (text) => {
-        // Разбиваем текст на части: обычный текст и **жирный**
         const parts = [];
         let lastIndex = 0;
         const regex = /\*\*(.+?)\*\*/g;
         let match;
 
         while ((match = regex.exec(text)) !== null) {
-            // Добавляем обычный текст перед жирным
             if (match.index > lastIndex) {
                 parts.push({
                     type: 'text',
@@ -123,7 +169,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 });
             }
             
-            // Добавляем жирный текст
             parts.push({
                 type: 'bold',
                 content: match[1]
@@ -132,7 +177,6 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             lastIndex = regex.lastIndex;
         }
         
-        // Добавляем оставшийся текст
         if (lastIndex < text.length) {
             parts.push({
                 type: 'text',
@@ -184,7 +228,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 setMessages(finalMessages);
                 saveHistory(finalMessages);
                 
-                onAgentUpdate({
+                const agentUpdateData = {
                     name: agent_name,
                     business_type: business_type,
                     description: description || business_type,
@@ -193,7 +237,12 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     avatar_url: avatarUrl,
                     external_agent_id: result.agent_id,
                     status: 'draft'
-                });
+                };
+                
+                // 🔥 НОВОЕ: Сохраняем данные агента
+                saveAgentData(agentUpdateData);
+                
+                onAgentUpdate(agentUpdateData);
             }
             // ОБНОВЛЕНИЕ агента
             else if (result.status === 'agent_updated' && result.agent_data) {
@@ -215,7 +264,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 setMessages(finalMessages);
                 saveHistory(finalMessages);
                 
-                onAgentUpdate({
+                const agentUpdateData = {
                     name: agent_name,
                     business_type: business_type,
                     description: description || business_type,
@@ -224,7 +273,12 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     avatar_url: avatarUrl,
                     external_agent_id: result.agent_id,
                     status: 'draft'
-                });
+                };
+                
+                // 🔥 НОВОЕ: Сохраняем обновлённые данные агента
+                saveAgentData(agentUpdateData);
+                
+                onAgentUpdate(agentUpdateData);
             }
             // Обычный ответ
             else if (result.response) {
