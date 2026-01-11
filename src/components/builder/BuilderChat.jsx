@@ -7,7 +7,7 @@ import { sendConstructorMessage } from '@/components/api/constructorApi';
 
 const STORAGE_KEY = 'neuro_seller_constructor_history';
 const USER_ID_KEY = 'neuro_seller_user_id';
-const AGENT_DATA_KEY = 'neuro_seller_agent_data'; // 🔑 Ключ для данных агента
+const AGENT_DATA_KEY = 'neuro_seller_agent_data';
 
 export default function BuilderChat({ onAgentUpdate, agentData }) {
     const [userId, setUserId] = useState(null);
@@ -76,8 +76,8 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 console.log('✅ History from localStorage:', parsed.length);
                 setMessages(parsed);
                 
-                // 🔥 НОВОЕ: Восстанавливаем данные агента из истории
-                restoreAgentFromHistory(parsed, uid);
+                // Восстанавливаем данные агента
+                await restoreAgentFromHistory(parsed, uid);
                 return;
             }
             
@@ -92,8 +92,8 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     setMessages(data.messages);
                     saveHistory(data.messages, uid);
                     
-                    // 🔥 НОВОЕ: Восстанавливаем данные агента из истории
-                    restoreAgentFromHistory(data.messages, uid);
+                    // Восстанавливаем данные агента
+                    await restoreAgentFromHistory(data.messages, uid);
                 }
             }
         } catch (error) {
@@ -101,10 +101,10 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         }
     };
 
-    // 🔥 НОВАЯ ФУНКЦИЯ: Восстановление агента из истории
-    const restoreAgentFromHistory = (msgs, uid) => {
+    // 🔥 ОБНОВЛЕНО: Восстановление агента из истории
+    const restoreAgentFromHistory = async (msgs, uid) => {
         try {
-            // Проверяем localStorage на сохранённые данные агента
+            // 1. Проверяем localStorage
             const agentStorageKey = `${AGENT_DATA_KEY}_${uid}`;
             const savedAgentData = localStorage.getItem(agentStorageKey);
             
@@ -115,16 +115,79 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 return;
             }
             
-            // Если нет в localStorage, проверяем историю сообщений
-            // Ищем последнее сообщение с созданием/обновлением агента
-            const agentCreatedMessage = msgs.find(msg => 
+            // 2. Ищем в истории сообщение о создании агента
+            const agentMessages = msgs.filter(msg => 
                 msg.role === 'assistant' && 
-                (msg.content.includes('🎉 Агент') || msg.content.includes('✅ Агент'))
+                (msg.content.includes('🎉 Агент "') || msg.content.includes('✅ Агент "'))
             );
             
-            if (agentCreatedMessage) {
-                console.log('⚠️ Agent was created but data not saved. Need to re-create.');
+            if (agentMessages.length === 0) {
+                console.log('ℹ️ No agent created yet');
+                return;
             }
+            
+            // 3. Извлекаем имя агента из последнего сообщения
+            const lastAgentMessage = agentMessages[agentMessages.length - 1];
+            const agentNameMatch = lastAgentMessage.content.match(/Агент "(.+?)"/);
+            
+            if (!agentNameMatch) {
+                console.warn('⚠️ Could not extract agent name from message');
+                return;
+            }
+            
+            const agentName = agentNameMatch[1];
+            console.log('🔍 Found agent in history:', agentName);
+            
+            // 4. Запрашиваем данные агента из Backend
+            try {
+                const response = await fetch(
+                    `https://neuro-seller-production.up.railway.app/api/v1/constructor/chat`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: uid,
+                            messages: msgs
+                        })
+                    }
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Если есть agent_data в ответе, восстанавливаем агента
+                    if (data.agent_data) {
+                        console.log('✅ Agent data retrieved from Backend');
+                        
+                        const { agent_name, business_type, description, instructions, knowledge_base } = data.agent_data;
+                        
+                        const isFemale = agent_name.toLowerCase().includes('виктори');
+                        const avatarUrl = isFemale
+                            ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
+                            : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+                        
+                        const agentUpdateData = {
+                            name: agent_name,
+                            business_type: business_type,
+                            description: description || business_type,
+                            instructions: instructions || '',
+                            knowledge_base: typeof knowledge_base === 'string' ? knowledge_base : JSON.stringify(knowledge_base, null, 2),
+                            avatar_url: avatarUrl,
+                            external_agent_id: data.agent_id,
+                            status: 'draft'
+                        };
+                        
+                        // Сохраняем для будущих сессий
+                        saveAgentData(agentUpdateData, uid);
+                        
+                        // Передаём родителю
+                        onAgentUpdate(agentUpdateData);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error fetching agent from Backend:', error);
+            }
+            
         } catch (error) {
             console.error('❌ Error restoring agent:', error);
         }
@@ -142,7 +205,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         }
     };
 
-    // 🔥 НОВАЯ ФУНКЦИЯ: Сохранение данных агента
+    // Сохранение данных агента
     const saveAgentData = (agentData, uid = userId) => {
         if (!uid) return;
         try {
@@ -239,9 +302,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     status: 'draft'
                 };
                 
-                // 🔥 НОВОЕ: Сохраняем данные агента
                 saveAgentData(agentUpdateData);
-                
                 onAgentUpdate(agentUpdateData);
             }
             // ОБНОВЛЕНИЕ агента
@@ -275,9 +336,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     status: 'draft'
                 };
                 
-                // 🔥 НОВОЕ: Сохраняем обновлённые данные агента
                 saveAgentData(agentUpdateData);
-                
                 onAgentUpdate(agentUpdateData);
             }
             // Обычный ответ
