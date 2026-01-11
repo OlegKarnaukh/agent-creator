@@ -5,6 +5,11 @@ import { ArrowRight, Loader2, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { testAgent } from '@/components/api/constructorApi';
 
+// ✅ Статические аватарки по умолчанию
+const DEFAULT_AVATAR_VICTORIA = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Victoria&style=circle&backgroundColor=fef3c7&hair=longHair&hairColor=auburn&accessories=prescription02&clothingColor=3c4f5c&top=longHairStraight&accessoriesColor=262e33&facialHairColor=auburn&clothesColor=262e33&graphicType=skull&eyeType=happy&eyebrowType=default&mouthType=smile&skinColor=light';
+
+const DEFAULT_AVATAR_ALEXANDER = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alexander&style=circle&backgroundColor=c0aede&hair=shortHairShortWaved&hairColor=brown&accessories=prescription01&clothingColor=black&top=shortHairShortWaved&accessoriesColor=262e33&facialHairColor=black&clothesColor=heather&graphicType=bat&eyeType=default&eyebrowType=default&mouthType=default&skinColor=light';
+
 export default function PreviewChat({ agentData }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -28,6 +33,13 @@ export default function PreviewChat({ agentData }) {
             }]);
         }
     }, [agentData.name]);
+    
+    // ✅ Определяем аватарку: загруженная или по умолчанию
+    const avatarUrl = agentData.avatar_url || (
+        agentData.name?.toLowerCase().includes('виктори')
+            ? DEFAULT_AVATAR_VICTORIA
+            : DEFAULT_AVATAR_ALEXANDER
+    );
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
@@ -47,8 +59,9 @@ export default function PreviewChat({ agentData }) {
                     role: 'assistant', 
                     content: result.response 
                 }]);
-            } else {
-                // Fallback на локальную симуляцию
+            } 
+            // Fallback на локальную симуляцию
+            else {
                 const responses = [
                     `Спасибо за ваш вопрос! На основе моей базы знаний могу сказать следующее...`,
                     `Отличный вопрос! Давайте разберём подробнее...`,
@@ -76,15 +89,17 @@ export default function PreviewChat({ agentData }) {
         <div className="flex flex-col h-full bg-white">
             {/* Agent Header */}
             <div className="p-6 border-b border-slate-100 flex flex-col items-center">
-                {agentData.avatar_url ? (
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden mb-3 shadow-lg">
-                        <img src={agentData.avatar_url} alt="Agent" className="w-full h-full object-cover" />
-                    </div>
-                ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 mb-3 flex items-center justify-center">
-                        <User className="w-6 h-6 text-slate-400" />
-                    </div>
-                )}
+                <div className="w-16 h-16 rounded-2xl overflow-hidden mb-3 shadow-lg border-2 border-slate-100">
+                    <img 
+                        src={avatarUrl} 
+                        alt="Agent" 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                            // Fallback если аватарка не загрузилась
+                            e.target.src = DEFAULT_AVATAR_VICTORIA;
+                        }}
+                    />
+                </div>
                 <h3 className="text-lg font-semibold text-slate-800">
                     {agentData.name || 'Ваш агент'}
                 </h3>
