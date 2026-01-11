@@ -1,54 +1,295 @@
-if (result.status === 'agent_ready' && result.agent_data) {
-    // Агент готов!
-    const { 
-        agent_name, 
-        business_type, 
-        description,
-        instructions,
-        knowledge_base 
-    } = result.agent_data;
-    const agentId = result.agent_id;
-    
-    console.log('✅ Agent created:', agentId);
-    console.log('Agent data:', result.agent_data);
-    
-    // Определяем аватар по имени
-    const isFemale = agent_name.toLowerCase().includes('виктори') || 
-                     agent_name.toLowerCase().includes('анна') || 
-                     agent_name.toLowerCase().includes('мария') ||
-                     agent_name.toLowerCase().includes('елена');
-    
-    const avatarUrl = isFemale
-        ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
-        : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+import React, { useState, useRef, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Paperclip, ArrowRight, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { base44 } from '@/api/base44Client';
+import { sendConstructorMessage } from '@/components/api/constructorApi';
 
-    // Формируем финальное сообщение для пользователя
-    const finalMessage = `🎉 Отлично! Агент "${agent_name}" для "${business_type}" создан!\n\nТеперь вы можете:\n1. Протестировать агента в окне предпросмотра справа\n2. Нажать "Сохранить" для активации\n3. Настроить каналы связи (Telegram, WhatsApp)`;
-    
-    const finalMessages = [...updatedMessages, { 
-        role: 'assistant', 
-        content: finalMessage
-    }];
-    
-    setMessages(finalMessages);
-    saveHistory(finalMessages); // ✅ Сохраняем историю НАВСЕГДА
+const STORAGE_KEY = 'neuro_seller_constructor_history';
 
-    // Передаём данные агента в родительский компонент
-    onAgentUpdate({ 
-        name: agent_name,
-        business_type: business_type,
-        description: description || business_type,
-        instructions: instructions || '',
-        knowledge_base: typeof knowledge_base === 'string' 
-            ? knowledge_base 
-            : JSON.stringify(knowledge_base, null, 2),
-        avatar_url: avatarUrl,
-        external_agent_id: agentId,
-        status: 'draft'
-    });
-    
-    // ✅ УДАЛЕНО: Больше НЕ очищаем историю!
-    
-} else if (result.response) {
-    // ... остальной код
+export default function BuilderChat({ onAgentUpdate, agentData }) {
+    const [userId, setUserId] = useState(null);
+    const [messages, setMessages] = useState([
+        {
+            role: 'assistant',
+            content: 'Привет! Я помогу создать вашего персонального AI-агента. Для начала расскажите, какой у вас бизнес и чем занимается ваша компания?'
+        }
+    ]);
+    const [input, setInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [historyLoaded, setHistoryLoaded] = useState(false);
+    const messagesEndRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    useEffect(() => {
+        // Получаем ID текущего пользователя
+        const fetchUser = async () => {
+            try {
+                const user = await base44.auth.me();
+                setUserId(user.id);
+                
+                // После получения userId загружаем историю
+                if (!historyLoaded) {
+                    await loadHistory(user.id);
+                    setHistoryLoaded(true);
+                }
+            } catch (error) {
+                console.error('Error fetching user:', error);
+            }
+        };
+        fetchUser();
+    }, [historyLoaded]);
+
+    // ✅ Загрузка истории (localStorage → БД)
+    const loadHistory = async (uid) => {
+        try {
+            // 1. Проверяем localStorage
+            const localHistory = localStorage.getItem(`${STORAGE_KEY}_${uid}`);
+            
+            if (localHistory) {
+                const parsedHistory = JSON.parse(localHistory);
+                console.log('📦 Loaded history from localStorage:', parsedHistory.length, 'messages');
+                
+                if (parsedHistory.length > 1) { // Больше чем дефолтное сообщение
+                    setMessages(parsedHistory);
+                    return;
+                }
+            }
+            
+            // 2. Если в localStorage пусто, загружаем из БД
+            console.log('🔍 Loading history from database...');
+            const response = await fetch(`https://neuro-seller-production.up.railway.app/api/v1/constructor/history/${uid}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.messages && data.messages.length > 0) {
+                    console.log('📥 Loaded history from DB:', data.messages.length, 'messages');
+                    setMessages(data.messages);
+                    
+                    // Сохраняем в localStorage
+                    localStorage.setItem(`${STORAGE_KEY}_${uid}`, JSON.stringify(data.messages));
+                }
+            }
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    };
+
+    // ✅ Сохранение истории (localStorage + БД)
+    const saveHistory = (updatedMessages) => {
+        if (!userId) return;
+        
+        try {
+            // 1. Сохраняем в localStorage (мгновенно)
+            localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(updatedMessages));
+            console.log('💾 Saved to localStorage:', updatedMessages.length, 'messages');
+            
+            // 2. Сохраняем в БД (в фоне, не блокируем UI)
+            // Backend автоматически сохраняет историю при каждом запросе к /constructor/chat
+        } catch (error) {
+            console.error('Error saving history:', error);
+        }
+    };
+
+    const handleSend = async () => {
+        if (!input.trim() || isLoading || !userId) return;
+
+        const userMessage = { role: 'user', content: input };
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
+        saveHistory(updatedMessages); // ✅ Сохраняем сразу
+        
+        const currentInput = input;
+        setInput('');
+        setIsLoading(true);
+
+        try {
+            // ✅ Отправляем весь массив сообщений в Railway API
+            const result = await sendConstructorMessage(userId, updatedMessages);
+            
+            // ✅ Проверяем формат ответа Railway
+            if (result.status === 'agent_ready' && result.agent_data) {
+                // Агент готов!
+                const { 
+                    agent_name, 
+                    business_type, 
+                    description,
+                    instructions,
+                    knowledge_base 
+                } = result.agent_data;
+                const agentId = result.agent_id;
+                
+                console.log('✅ Agent created:', agentId);
+                console.log('Agent data:', result.agent_data);
+                
+                // Определяем аватар по имени
+                const isFemale = agent_name.toLowerCase().includes('виктори') || 
+                                 agent_name.toLowerCase().includes('анна') || 
+                                 agent_name.toLowerCase().includes('мария') ||
+                                 agent_name.toLowerCase().includes('елена');
+                
+                const avatarUrl = isFemale
+                    ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
+                    : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+
+                // Формируем финальное сообщение для пользователя
+                const finalMessage = `🎉 Отлично! Агент "${agent_name}" для "${business_type}" создан!\n\nТеперь вы можете:\n1. Протестировать агента в окне предпросмотра справа\n2. Нажать "Сохранить" для активации\n3. Настроить каналы связи (Telegram, WhatsApp)`;
+                
+                const finalMessages = [...updatedMessages, { 
+                    role: 'assistant', 
+                    content: finalMessage
+                }];
+                
+                setMessages(finalMessages);
+                saveHistory(finalMessages); // ✅ Сохраняем историю НАВСЕГДА
+
+                // Передаём данные агента в родительский компонент
+                onAgentUpdate({ 
+                    name: agent_name,
+                    business_type: business_type,
+                    description: description || business_type,
+                    instructions: instructions || '',
+                    knowledge_base: typeof knowledge_base === 'string' 
+                        ? knowledge_base 
+                        : JSON.stringify(knowledge_base, null, 2),
+                    avatar_url: avatarUrl,
+                    external_agent_id: agentId,
+                    status: 'draft'
+                });
+                
+            } else if (result.response) {
+                // Обычный ответ мета-агента (агент ещё не готов)
+                const responseMessages = [...updatedMessages, { 
+                    role: 'assistant', 
+                    content: result.response 
+                }];
+                
+                setMessages(responseMessages);
+                saveHistory(responseMessages); // ✅ Сохраняем ответ
+            } else {
+                // Неизвестный формат
+                console.error('Unexpected API response format:', result);
+                const errorMessages = [...updatedMessages, { 
+                    role: 'assistant', 
+                    content: '❌ Произошла ошибка при обработке ответа. Попробуйте ещё раз.' 
+                }];
+                
+                setMessages(errorMessages);
+                saveHistory(errorMessages);
+            }
+            
+        } catch (error) {
+            console.error('❌ Error calling constructor API:', error);
+            
+            // Показываем ошибку пользователю
+            const errorMessages = [...updatedMessages, { 
+                role: 'assistant', 
+                content: `❌ Ошибка соединения с сервером. Пожалуйста, попробуйте ещё раз.\n\n${error.message}` 
+            }];
+            
+            setMessages(errorMessages);
+            saveHistory(errorMessages);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleFileClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setInput(`[Загружен файл: ${file.name}]`);
+        }
+    };
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <AnimatePresence initial={false}>
+                    {messages.map((msg, idx) => (
+                        <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                            <div
+                                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                                    msg.role === 'user'
+                                        ? 'bg-slate-900 text-white'
+                                        : 'bg-slate-100 text-slate-800'
+                                }`}
+                            >
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                            </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+
+                {isLoading && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex justify-start"
+                    >
+                        <div className="bg-slate-100 rounded-2xl px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+                                <span className="text-sm text-slate-500">Думаю...</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+                <div ref={messagesEndRef} />
+            </div>
+
+            <div className="p-4 border-t border-slate-200">
+                <div className="flex items-center gap-2 bg-slate-50 rounded-2xl px-4 py-2">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        accept=".pdf,.doc,.docx,.txt,.xlsx,.csv"
+                    />
+                    <button
+                        onClick={handleFileClick}
+                        className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                    >
+                        <Paperclip className="w-5 h-5 text-slate-500" />
+                    </button>
+                    <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                        placeholder="Напишите сообщение..."
+                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm"
+                    />
+                    <Button
+                        onClick={handleSend}
+                        disabled={!input.trim() || isLoading}
+                        size="icon"
+                        className="rounded-full bg-slate-900 hover:bg-slate-800 h-9 w-9"
+                    >
+                        <ArrowRight className="w-4 h-4" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
 }
