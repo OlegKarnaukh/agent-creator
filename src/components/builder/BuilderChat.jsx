@@ -197,7 +197,7 @@ export default function BuilderChat({ onAgentUpdate, agentData, messages, setMes
             </div>
 
             <div className="p-4 border-t border-slate-200">
-                <div className="flex items-end gap-2 bg-slate-50 rounded-2xl px-4 py-2">
+                <div className="flex items-end gap-2 bg-slate-50 rounded-2xl px-4 py-2 border-4 border-red-500">
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -220,7 +220,7 @@ export default function BuilderChat({ onAgentUpdate, agentData, messages, setMes
                                 handleSend();
                             }
                         }}
-                        placeholder="Напишите сообщение... (Shift+Enter для новой строки)"
+                        placeholder="🔥 ТЕСТ: Напишите сообщение (Shift+Enter = новая строка)"
                         className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm resize-none min-h-[40px] max-h-[200px]"
                         rows={1}
                     />
