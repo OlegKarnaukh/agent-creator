@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,20 @@ export default function ConfigurePanel({ agentData, onAgentUpdate }) {
         { id: 'phone', name: 'Телефония', icon: Phone, color: 'bg-purple-500' },
         { id: 'website', name: 'Виджет на сайт', icon: Globe, color: 'bg-orange-500' },
     ];
+
+    // ✅ ДОБАВЛЕНО: refs для отслеживания обновлений
+    const descriptionRef = useRef(null);
+    const instructionsRef = useRef(null);
+
+    // ✅ ДОБАВЛЕНО: useEffect для обновления полей при получении данных от Backend
+    useEffect(() => {
+        if (agentData.description && descriptionRef.current) {
+            descriptionRef.current.value = agentData.description;
+        }
+        if (agentData.instructions && instructionsRef.current) {
+            instructionsRef.current.value = agentData.instructions;
+        }
+    }, [agentData.description, agentData.instructions]);
 
     const handleChannelToggle = (channelId, enabled) => {
         const currentChannels = agentData.channels || [];
@@ -65,7 +79,8 @@ export default function ConfigurePanel({ agentData, onAgentUpdate }) {
             <div className="space-y-3">
                 <Label className="text-xs text-slate-500">Описание</Label>
                 <Textarea
-                    value={agentData.description || ''}
+                    ref={descriptionRef}
+                    defaultValue={agentData.description || ''}
                     onChange={(e) => onAgentUpdate({ description: e.target.value })}
                     placeholder="Опишите, чем занимается агент..."
                     className="min-h-[80px] resize-none"
@@ -76,7 +91,8 @@ export default function ConfigurePanel({ agentData, onAgentUpdate }) {
             <div className="space-y-3">
                 <Label className="text-xs text-slate-500">Системные инструкции</Label>
                 <Textarea
-                    value={agentData.instructions || ''}
+                    ref={instructionsRef}
+                    defaultValue={agentData.instructions || ''}
                     onChange={(e) => onAgentUpdate({ instructions: e.target.value })}
                     placeholder="Вы — профессиональный консультант компании..."
                     className="min-h-[120px] resize-none font-mono text-xs"
