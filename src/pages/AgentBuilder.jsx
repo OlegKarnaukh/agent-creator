@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, ArrowLeft } from "lucide-react";
-import { motion } from "framer-motion";
+import { Save, ArrowLeft, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { saveAgent } from '@/components/api/constructorApi';
 
@@ -16,6 +16,7 @@ export default function AgentBuilder() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('create');
     const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
     const [agentData, setAgentData] = useState({
         name: '',
         avatar_url: '',
@@ -41,6 +42,8 @@ export default function AgentBuilder() {
         if (!agentData.name) return;
         
         setIsSaving(true);
+        setSaveSuccess(false);
+        
         try {
             // Если есть external_agent_id, сначала вызываем API сохранения
             if (agentData.external_agent_id) {
@@ -49,15 +52,27 @@ export default function AgentBuilder() {
                     console.log('Agent saved on external API:', apiResult);
                 } catch (apiError) {
                     console.error('Error saving to external API:', apiError);
-                    // Продолжаем сохранение в локальной БД даже если внешний API упал
                 }
             }
 
             // Сохраняем в локальной базе данных
             const savedAgent = await base44.entities.Agent.create(agentData);
-            navigate(createPageUrl('Dashboard') + `?agentId=${savedAgent.id}`);
+            
+            // ✅ ИЗМЕНЕНО: Обновляем статус и показываем уведомление
+            setAgentData(prev => ({ 
+                ...prev, 
+                status: 'active',
+                id: savedAgent.id 
+            }));
+            
+            setSaveSuccess(true);
+            
+            // Скрываем уведомление через 3 секунды
+            setTimeout(() => setSaveSuccess(false), 3000);
+            
         } catch (error) {
             console.error('Error saving agent:', error);
+            alert('❌ Ошибка при сохранении агента: ' + error.message);
         } finally {
             setIsSaving(false);
         }
@@ -83,14 +98,31 @@ export default function AgentBuilder() {
                         </div>
                     </div>
                     
-                    <Button
-                        onClick={handleSave}
-                        disabled={!agentData.name || isSaving}
-                        className="bg-slate-900 hover:bg-slate-800 rounded-full px-6 disabled:opacity-50"
-                    >
-                        <Save className="w-4 h-4 mr-2" />
-                        {isSaving ? 'Сохранение...' : 'Сохранить'}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        {/* Success notification */}
+                        <AnimatePresence>
+                            {saveSuccess && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full border border-green-200"
+                                >
+                                    <Check className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Агент сохранён!</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                        
+                        <Button
+                            onClick={handleSave}
+                            disabled={!agentData.name || isSaving}
+                            className="bg-slate-900 hover:bg-slate-800 rounded-full px-6 disabled:opacity-50"
+                        >
+                            <Save className="w-4 h-4 mr-2" />
+                            {isSaving ? 'Сохранение...' : 'Сохранить'}
+                        </Button>
+                    </div>
                 </div>
             </header>
 
