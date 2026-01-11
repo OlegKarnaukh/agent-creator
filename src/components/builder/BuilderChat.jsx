@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from '@/api/base44Client';
 import { sendConstructorMessage } from '@/components/api/constructorApi';
 
+const STORAGE_KEY = 'neuro_seller_constructor_history';
+
 export default function BuilderChat({ onAgentUpdate, agentData }) {
     const [userId, setUserId] = useState(null);
     const [messages, setMessages] = useState([
@@ -16,6 +18,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [historyLoaded, setHistoryLoaded] = useState(false);
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -33,12 +36,86 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
             try {
                 const user = await base44.auth.me();
                 setUserId(user.id);
+                
+                // После получения userId загружаем историю
+                if (!historyLoaded) {
+                    await loadHistory(user.id);
+                    setHistoryLoaded(true);
+                }
             } catch (error) {
                 console.error('Error fetching user:', error);
             }
         };
         fetchUser();
-    }, []);
+    }, [historyLoaded]);
+
+    // ✅ Загрузка истории (localStorage → БД)
+    const loadHistory = async (uid) => {
+        try {
+            // 1. Проверяем localStorage
+            const localHistory = localStorage.getItem(`${STORAGE_KEY}_${uid}`);
+            
+            if (localHistory) {
+                const parsedHistory = JSON.parse(localHistory);
+                console.log('📦 Loaded history from localStorage:', parsedHistory.length, 'messages');
+                
+                if (parsedHistory.length > 1) { // Больше чем дефолтное сообщение
+                    setMessages(parsedHistory);
+                    return;
+                }
+            }
+            
+            // 2. Если в localStorage пусто, загружаем из БД
+            console.log('🔍 Loading history from database...');
+            const response = await fetch(`https://neuro-seller-production.up.railway.app/api/v1/constructor/history/${uid}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.messages && data.messages.length > 0) {
+                    console.log('📥 Loaded history from DB:', data.messages.length, 'messages');
+                    setMessages(data.messages);
+                    
+                    // Сохраняем в localStorage
+                    localStorage.setItem(`${STORAGE_KEY}_${uid}`, JSON.stringify(data.messages));
+                }
+            }
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    };
+
+    // ✅ Сохранение истории (localStorage + БД)
+    const saveHistory = (updatedMessages) => {
+        if (!userId) return;
+        
+        try {
+            // 1. Сохраняем в localStorage (мгновенно)
+            localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(updatedMessages));
+            console.log('💾 Saved to localStorage:', updatedMessages.length, 'messages');
+            
+            // 2. Сохраняем в БД (в фоне, не блокируем UI)
+            // Backend автоматически сохраняет историю при каждом запросе к /constructor/chat
+        } catch (error) {
+            console.error('Error saving history:', error);
+        }
+    };
+
+    // ✅ Очистка истории
+    const clearHistory = () => {
+        if (!userId) return;
+        
+        const defaultMessages = [
+            {
+                role: 'assistant',
+                content: 'Привет! Я помогу создать вашего персонального AI-агента. Для начала расскажите, какой у вас бизнес и чем занимается ваша компания?'
+            }
+        ];
+        
+        setMessages(defaultMessages);
+        localStorage.removeItem(`${STORAGE_KEY}_${userId}`);
+        console.log('🗑️ History cleared');
+    };
 
     const handleSend = async () => {
         if (!input.trim() || isLoading || !userId) return;
@@ -46,6 +123,7 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
         const userMessage = { role: 'user', content: input };
         const updatedMessages = [...messages, userMessage];
         setMessages(updatedMessages);
+        saveHistory(updatedMessages); // ✅ Сохраняем сразу
         
         const currentInput = input;
         setInput('');
@@ -61,8 +139,8 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 const { 
                     agent_name, 
                     business_type, 
-                    description,      // ✅ ДОБАВЛЕНО
-                    instructions,     // ✅ ДОБАВЛЕНО
+                    description,
+                    instructions,
                     knowledge_base 
                 } = result.agent_data;
                 const agentId = result.agent_id;
@@ -83,17 +161,20 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                 // Формируем финальное сообщение для пользователя
                 const finalMessage = `🎉 Отлично! Агент "${agent_name}" для "${business_type}" создан!\n\nТеперь вы можете:\n1. Протестировать агента в окне предпросмотра справа\n2. Нажать "Сохранить" для активации\n3. Настроить каналы связи (Telegram, WhatsApp)`;
                 
-                setMessages(prev => [...prev, { 
+                const finalMessages = [...updatedMessages, { 
                     role: 'assistant', 
                     content: finalMessage
-                }]);
+                }];
+                
+                setMessages(finalMessages);
+                saveHistory(finalMessages); // ✅ Сохраняем финальное сообщение
 
-                // ✅ ИСПРАВЛЕНО: Передаём description и instructions
+                // Передаём данные агента в родительский компонент
                 onAgentUpdate({ 
                     name: agent_name,
                     business_type: business_type,
-                    description: description || business_type,  // ✅ ДОБАВЛЕНО (fallback на business_type)
-                    instructions: instructions || '',           // ✅ ДОБАВЛЕНО
+                    description: description || business_type,
+                    instructions: instructions || '',
                     knowledge_base: typeof knowledge_base === 'string' 
                         ? knowledge_base 
                         : JSON.stringify(knowledge_base, null, 2),
@@ -102,29 +183,41 @@ export default function BuilderChat({ onAgentUpdate, agentData }) {
                     status: 'draft'
                 });
                 
+                // ✅ Очищаем историю после успешного создания агента
+                setTimeout(() => clearHistory(), 2000);
+                
             } else if (result.response) {
                 // Обычный ответ мета-агента (агент ещё не готов)
-                setMessages(prev => [...prev, { 
+                const responseMessages = [...updatedMessages, { 
                     role: 'assistant', 
                     content: result.response 
-                }]);
+                }];
+                
+                setMessages(responseMessages);
+                saveHistory(responseMessages); // ✅ Сохраняем ответ
             } else {
                 // Неизвестный формат
                 console.error('Unexpected API response format:', result);
-                setMessages(prev => [...prev, { 
+                const errorMessages = [...updatedMessages, { 
                     role: 'assistant', 
                     content: '❌ Произошла ошибка при обработке ответа. Попробуйте ещё раз.' 
-                }]);
+                }];
+                
+                setMessages(errorMessages);
+                saveHistory(errorMessages);
             }
             
         } catch (error) {
             console.error('❌ Error calling constructor API:', error);
             
             // Показываем ошибку пользователю
-            setMessages(prev => [...prev, { 
+            const errorMessages = [...updatedMessages, { 
                 role: 'assistant', 
                 content: `❌ Ошибка соединения с сервером. Пожалуйста, попробуйте ещё раз.\n\n${error.message}` 
-            }]);
+            }];
+            
+            setMessages(errorMessages);
+            saveHistory(errorMessages);
         } finally {
             setIsLoading(false);
         }
