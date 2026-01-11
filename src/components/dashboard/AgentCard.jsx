@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, MessageSquare, TrendingUp, User } from 'lucide-react';
+import { createPageUrl } from "@/utils";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,17 +13,75 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function AgentCard({ agent, onClick, isSelected }) {
+    const navigate = useNavigate();
+    
     const statusColors = {
-        draft: 'bg-slate-100 text-slate-600',
+        draft: 'bg-amber-100 text-amber-700',
+        test: 'bg-blue-100 text-blue-700',
         active: 'bg-emerald-100 text-emerald-700',
-        paused: 'bg-amber-100 text-amber-700',
+        paused: 'bg-slate-100 text-slate-600',
     };
 
     const statusLabels = {
-        draft: 'Черновик',
-        active: 'Активен',
-        paused: 'На паузе',
+        draft: '🟡 Черновик',
+        test: '🔵 Тестирование',
+        active: '🟢 Активен',
+        paused: '🟠 На паузе',
     };
+
+    function handleEdit(e) {
+        e.stopPropagation();
+        
+        if (agent.conversation_id) {
+            // ✅ Переход в конструктор с conversation_id
+            const url = createPageUrl('AgentBuilder');
+            navigate(`${url}?conversationId=${agent.conversation_id}`);
+        } else {
+            alert('Этот агент был создан в старой версии. Conversation ID отсутствует.');
+        }
+    }
+    
+    async function handlePause(e) {
+        e.stopPropagation();
+        
+        try {
+            if (agent.status === 'active') {
+                await fetch(
+                    `https://neuro-seller-production.up.railway.app/api/v1/agents/${agent.id}/pause`,
+                    { method: 'POST' }
+                );
+            } else if (agent.status === 'paused') {
+                await fetch(
+                    `https://neuro-seller-production.up.railway.app/api/v1/agents/${agent.id}/resume`,
+                    { method: 'POST' }
+                );
+            }
+            
+            // Перезагрузить данные
+            window.location.reload();
+        } catch (error) {
+            console.error('Ошибка управления агентом:', error);
+            alert('Ошибка. Попробуйте ещё раз.');
+        }
+    }
+    
+    async function handleDelete(e) {
+        e.stopPropagation();
+        
+        if (!confirm(`Удалить агента "${agent.name}"?`)) return;
+        
+        try {
+            await fetch(
+                `https://neuro-seller-production.up.railway.app/api/v1/agents/${agent.id}`,
+                { method: 'DELETE' }
+            );
+            
+            window.location.reload();
+        } catch (error) {
+            console.error('Ошибка удаления агента:', error);
+            alert('Ошибка. Попробуйте ещё раз.');
+        }
+    }
 
     return (
         <motion.div
@@ -65,9 +125,22 @@ export default function AgentCard({ agent, onClick, isSelected }) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Редактировать</DropdownMenuItem>
-                        <DropdownMenuItem>Дублировать</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">Удалить</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleEdit}>
+                            Редактировать
+                        </DropdownMenuItem>
+                        {agent.status === 'active' && (
+                            <DropdownMenuItem onClick={handlePause}>
+                                Поставить на паузу
+                            </DropdownMenuItem>
+                        )}
+                        {agent.status === 'paused' && (
+                            <DropdownMenuItem onClick={handlePause}>
+                                Возобновить
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={handleDelete} className="text-red-600">
+                            Удалить
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
