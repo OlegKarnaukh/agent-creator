@@ -12,6 +12,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// ✅ Статические аватарки по умолчанию
+const DEFAULT_AVATAR_VICTORIA = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Victoria&style=circle&backgroundColor=fef3c7&hair=longHair&hairColor=auburn&accessories=prescription02&clothingColor=3c4f5c&top=longHairStraight&accessoriesColor=262e33&facialHairColor=auburn&clothesColor=262e33&graphicType=skull&eyeType=happy&eyebrowType=default&mouthType=smile&skinColor=light';
+
+const DEFAULT_AVATAR_ALEXANDER = 'https://api.dicebear.com/9.x/avataaars/svg?seed=Alexander&style=circle&backgroundColor=c0aede&hair=shortHairShortWaved&hairColor=brown&accessories=prescription01&clothingColor=black&top=shortHairShortWaved&accessoriesColor=262e33&facialHairColor=black&clothesColor=heather&graphicType=bat&eyeType=default&eyebrowType=default&mouthType=default&skinColor=light';
+
 export default function AgentCard({ agent, onClick, isSelected }) {
     const navigate = useNavigate();
     
@@ -28,6 +33,13 @@ export default function AgentCard({ agent, onClick, isSelected }) {
         active: '🟢 Активен',
         paused: '🟠 На паузе',
     };
+    
+    // ✅ Определяем аватарку: загруженная или по умолчанию
+    const avatarUrl = agent.avatar_url || (
+        agent.name?.toLowerCase().includes('виктори')
+            ? DEFAULT_AVATAR_VICTORIA
+            : DEFAULT_AVATAR_ALEXANDER
+    );
 
     function handleEdit(e) {
         e.stopPropagation();
@@ -97,17 +109,17 @@ export default function AgentCard({ agent, onClick, isSelected }) {
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    {agent.avatar_url ? (
+                    <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-100">
                         <img 
-                            src={agent.avatar_url} 
+                            src={avatarUrl} 
                             alt={agent.name}
-                            className="w-12 h-12 rounded-xl object-cover"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                // Fallback если аватарка не загрузилась
+                                e.target.src = DEFAULT_AVATAR_VICTORIA;
+                            }}
                         />
-                    ) : (
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                            <User className="w-5 h-5 text-slate-400" />
-                        </div>
-                    )}
+                    </div>
                     <div>
                         <h3 className="font-semibold text-slate-800">{agent.name}</h3>
                         <p className="text-xs text-slate-500">{agent.business_type || 'Бизнес'}</p>
