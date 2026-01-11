@@ -1,10 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Paperclip, ArrowRight, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from '@/api/base44Client';
 import { sendConstructorMessage } from '@/components/api/constructorApi';
+
+// Простой markdown парсер для форматирования текста
+function parseMarkdown(text) {
+    return text
+        // Жирный текст: **text** или __text__
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.+?)__/g, '<strong>$1</strong>')
+        // Курсив: *text* или _text_ (но не внутри слов)
+        .replace(/(?<!\w)\*(.+?)\*(?!\w)/g, '<em>$1</em>')
+        .replace(/(?<!\w)_(.+?)_(?!\w)/g, '<em>$1</em>')
+        // Маркированные списки с •
+        .replace(/^• (.+)$/gm, '<span class="block">• $1</span>');
+}
 
 export default function BuilderChat({ onAgentUpdate, agentData, messages, setMessages }) {
     const [userId, setUserId] = useState(null);
@@ -56,7 +69,7 @@ export default function BuilderChat({ onAgentUpdate, agentData, messages, setMes
             }]);
 
             if (result.status === 'agent_ready' && result.agent_data) {
-                const { agent_name, business_type, knowledge_base } = result.agent_data;
+                const { agent_name, business_type, knowledge_base, description, instructions } = result.agent_data;
                 const agentId = result.agent_id;
 
                 const isFemale = agent_name.toLowerCase().includes('виктори') ||
@@ -77,10 +90,18 @@ export default function BuilderChat({ onAgentUpdate, agentData, messages, setMes
                     name: agent_name,
                     business_type: business_type,
                     knowledge_base: knowledgeBaseStr,
+                    description: description || '',
+                    instructions: instructions || '',
                     avatar_url: avatarUrl,
                     external_agent_id: agentId,
                     status: 'active'
                 });
+
+                // Показываем уведомление о создании агента
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: `✅ **Агент "${agent_name}" успешно создан!**\n\nТеперь вы можете:\n• Протестировать агента во вкладке "Предпросмотр"\n• Настроить профиль во вкладке "Настроить"\n• Подключить каналы связи (Telegram, WhatsApp)`
+                }]);
             }
         } catch (error) {
             console.error('Error calling constructor API:', error);
@@ -149,7 +170,10 @@ export default function BuilderChat({ onAgentUpdate, agentData, messages, setMes
                                         : 'bg-slate-100 text-slate-800'
                                 }`}
                             >
-                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                                <div
+                                    className="text-sm whitespace-pre-wrap leading-relaxed"
+                                    dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }}
+                                />
                             </div>
                         </motion.div>
                     ))}
@@ -173,7 +197,7 @@ export default function BuilderChat({ onAgentUpdate, agentData, messages, setMes
             </div>
 
             <div className="p-4 border-t border-slate-200">
-                <div className="flex items-center gap-2 bg-slate-50 rounded-2xl px-4 py-2">
+                <div className="flex items-end gap-2 bg-slate-50 rounded-2xl px-4 py-2">
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -183,22 +207,28 @@ export default function BuilderChat({ onAgentUpdate, agentData, messages, setMes
                     />
                     <button
                         onClick={handleFileClick}
-                        className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                        className="p-2 hover:bg-slate-200 rounded-full transition-colors mb-1"
                     >
                         <Paperclip className="w-5 h-5 text-slate-500" />
                     </button>
-                    <Input
+                    <Textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Напишите сообщение..."
-                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }}
+                        placeholder="Напишите сообщение... (Shift+Enter для новой строки)"
+                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm resize-none min-h-[40px] max-h-[200px]"
+                        rows={1}
                     />
                     <Button
                         onClick={handleSend}
                         disabled={!input.trim() || isLoading}
                         size="icon"
-                        className="rounded-full bg-slate-900 hover:bg-slate-800 h-9 w-9"
+                        className="rounded-full bg-slate-900 hover:bg-slate-800 h-9 w-9 mb-1"
                     >
                         <ArrowRight className="w-4 h-4" />
                     </Button>
