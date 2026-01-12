@@ -1,0 +1,286 @@
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { motion } from 'framer-motion';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { DollarSign, Users, Zap, TrendingUp, Bot, MessageSquare, CreditCard } from 'lucide-react';
+import StatCard from '@/components/dashboard/StatCard';
+
+const COLORS = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981'];
+
+const PLAN_PRICES = {
+    free: 0,
+    starter: 990,
+    pro: 4990,
+    enterprise: 19990
+};
+
+export default function Analytics() {
+    const { data: users = [] } = useQuery({
+        queryKey: ['all_users'],
+        queryFn: () => base44.entities.User.list(),
+    });
+
+    const { data: agents = [] } = useQuery({
+        queryKey: ['all_agents'],
+        queryFn: () => base44.entities.Agent.list(),
+    });
+
+    const { data: conversations = [] } = useQuery({
+        queryKey: ['all_conversations_analytics'],
+        queryFn: () => base44.entities.Conversation.list(),
+    });
+
+    const { data: billings = [] } = useQuery({
+        queryKey: ['all_billings'],
+        queryFn: () => base44.entities.Billing.list(),
+    });
+
+    // Финансовая статистика
+    const revenue = billings.reduce((sum, b) => sum + (PLAN_PRICES[b.plan] || 0), 0);
+    const mrr = revenue; // Monthly Recurring Revenue
+
+    // Статистика по пользователям
+    const activeUsers = users.length;
+    const usersByPlan = {
+        free: billings.filter(b => b.plan === 'free').length,
+        starter: billings.filter(b => b.plan === 'starter').length,
+        pro: billings.filter(b => b.plan === 'pro').length,
+        enterprise: billings.filter(b => b.plan === 'enterprise').length,
+    };
+
+    const totalTokensUsed = billings.reduce((sum, b) => sum + (b.tokens_used || 0), 0);
+    const avgTokensPerUser = activeUsers > 0 ? Math.round(totalTokensUsed / activeUsers) : 0;
+
+    // Данные для графиков
+    const planDistribution = [
+        { name: 'Free', value: usersByPlan.free, color: '#64748b' },
+        { name: 'Starter', value: usersByPlan.starter, color: '#0ea5e9' },
+        { name: 'Pro', value: usersByPlan.pro, color: '#8b5cf6' },
+        { name: 'Enterprise', value: usersByPlan.enterprise, color: '#f59e0b' }
+    ].filter(item => item.value > 0);
+
+    // Топ пользователей по использованию токенов
+    const topUsers = billings
+        .sort((a, b) => (b.tokens_used || 0) - (a.tokens_used || 0))
+        .slice(0, 5)
+        .map(b => ({
+            user_id: b.user_id,
+            tokens: b.tokens_used || 0,
+            plan: b.plan
+        }));
+
+    const stats = [
+        {
+            title: 'Месячный доход',
+            value: `₽${(mrr / 100).toLocaleString()}`,
+            icon: DollarSign,
+            color: 'green',
+            subtitle: `${billings.filter(b => b.plan !== 'free').length} платящих`
+        },
+        {
+            title: 'Всего пользователей',
+            value: activeUsers,
+            icon: Users,
+            color: 'blue',
+            subtitle: `${usersByPlan.free} на бесплатном`
+        },
+        {
+            title: 'Всего агентов',
+            value: agents.length,
+            icon: Bot,
+            color: 'purple',
+            subtitle: `${agents.filter(a => a.status === 'active').length} активных`
+        },
+        {
+            title: 'Всего диалогов',
+            value: conversations.length,
+            icon: MessageSquare,
+            color: 'orange',
+            subtitle: `${conversations.filter(c => c.status === 'active').length} активных`
+        }
+    ];
+
+    // Симуляция данных роста за последние 7 дней
+    const growthData = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (6 - i));
+        return {
+            date: date.toLocaleDateString('ru', { day: 'numeric', month: 'short' }),
+            users: Math.round(activeUsers * (0.7 + i * 0.05)),
+            revenue: Math.round(mrr * (0.6 + i * 0.06) / 100)
+        };
+    });
+
+    return (
+        <div className="min-h-screen bg-slate-50 p-8">
+            <div className="max-w-7xl mx-auto">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-slate-900">Аналитика платформы</h1>
+                    <p className="text-slate-500 mt-1">Финансовые показатели и статистика пользователей</p>
+                </div>
+
+                {/* Основная статистика */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    {stats.map((stat, idx) => (
+                        <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                        >
+                            <StatCard {...stat} />
+                        </motion.div>
+                    ))}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    {/* График роста пользователей и дохода */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="bg-white rounded-2xl p-6 border border-slate-200"
+                    >
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Рост за неделю</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={growthData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <XAxis dataKey="date" stroke="#64748b" />
+                                <YAxis yAxisId="left" stroke="#64748b" />
+                                <YAxis yAxisId="right" orientation="right" stroke="#64748b" />
+                                <Tooltip 
+                                    contentStyle={{ 
+                                        backgroundColor: '#fff', 
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px'
+                                    }}
+                                />
+                                <Legend />
+                                <Line 
+                                    yAxisId="left"
+                                    type="monotone" 
+                                    dataKey="users" 
+                                    stroke="#0ea5e9" 
+                                    strokeWidth={2}
+                                    name="Пользователи"
+                                />
+                                <Line 
+                                    yAxisId="right"
+                                    type="monotone" 
+                                    dataKey="revenue" 
+                                    stroke="#10b981" 
+                                    strokeWidth={2}
+                                    name="Доход (₽)"
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </motion.div>
+
+                    {/* Распределение по тарифам */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="bg-white rounded-2xl p-6 border border-slate-200"
+                    >
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Распределение по тарифам</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={planDistribution}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                    outerRadius={100}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                >
+                                    {planDistribution.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </motion.div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Топ пользователей по токенам */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                        className="bg-white rounded-2xl p-6 border border-slate-200"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-slate-900">Топ по использованию</h3>
+                            <Zap className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <div className="space-y-3">
+                            {topUsers.map((user, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                                            {idx + 1}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-900">
+                                                User {user.user_id.slice(0, 8)}...
+                                            </p>
+                                            <p className="text-xs text-slate-500 capitalize">{user.plan}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            {user.tokens.toLocaleString()}
+                                        </p>
+                                        <p className="text-xs text-slate-500">токенов</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {topUsers.length === 0 && (
+                                <p className="text-center text-slate-400 py-8">Нет данных</p>
+                            )}
+                        </div>
+                    </motion.div>
+
+                    {/* Средние показатели */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7 }}
+                        className="bg-white rounded-2xl p-6 border border-slate-200"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-slate-900">Средние показатели</h3>
+                            <TrendingUp className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div className="space-y-4">
+                            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                                <p className="text-sm text-blue-700 mb-1">Токенов на пользователя</p>
+                                <p className="text-3xl font-bold text-blue-900">{avgTokensPerUser.toLocaleString()}</p>
+                            </div>
+                            <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
+                                <p className="text-sm text-purple-700 mb-1">Агентов на пользователя</p>
+                                <p className="text-3xl font-bold text-purple-900">
+                                    {activeUsers > 0 ? (agents.length / activeUsers).toFixed(1) : '0'}
+                                </p>
+                            </div>
+                            <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
+                                <p className="text-sm text-green-700 mb-1">Средний доход с платящего</p>
+                                <p className="text-3xl font-bold text-green-900">
+                                    ₽{billings.filter(b => b.plan !== 'free').length > 0 
+                                        ? Math.round(mrr / billings.filter(b => b.plan !== 'free').length / 100).toLocaleString()
+                                        : '0'}
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+        </div>
+    );
+}
