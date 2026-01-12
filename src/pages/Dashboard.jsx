@@ -80,24 +80,7 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-                <div className="max-w-screen-2xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-900">AI Агенты</h1>
-                        <p className="text-sm text-slate-500">Управляйте вашими виртуальными ассистентами</p>
-                    </div>
-                    
-                    <Button
-                        onClick={() => navigate(createPageUrl('AgentBuilder'))}
-                        className="bg-slate-900 hover:bg-slate-800 rounded-full px-6"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Создать агента
-                    </Button>
-                </div>
-            </header>
-
-            <main className="max-w-screen-2xl mx-auto px-6 py-8">
+            <div className="p-8">
                 {agents.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -158,7 +141,17 @@ export default function Dashboard() {
                         )}
                     </div>
                 )}
-            </main>
+
+                <div className="flex justify-end mt-8">
+                    <Button
+                        onClick={() => navigate(createPageUrl('AgentBuilder'))}
+                        className="bg-slate-900 hover:bg-slate-800 rounded-full px-6"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Создать агента
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 }
