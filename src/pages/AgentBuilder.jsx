@@ -127,7 +127,7 @@ export default function AgentBuilder() {
 
             <main className="max-w-screen-2xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-73px)]">
-                    <div className="border-r border-slate-200 bg-white flex flex-col">
+                    <div className="border-r border-slate-200 bg-white flex flex-col h-full">
                         <div className="p-4 border-b border-slate-200">
                             <Tabs value={activeTab} onValueChange={setActiveTab}>
                                 <TabsList className="bg-slate-100 p-1 rounded-xl">
@@ -170,7 +170,7 @@ export default function AgentBuilder() {
                         </motion.div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-slate-100 to-slate-50 flex flex-col">
+                    <div className="bg-gradient-to-br from-slate-100 to-slate-50 flex flex-col h-full">
                         <div className="p-4 border-b border-slate-200 bg-white/50 backdrop-blur-sm">
                             <h2 className="font-semibold text-slate-700">Предпросмотр</h2>
                         </div>
