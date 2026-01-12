@@ -186,7 +186,7 @@ export default function AgentBuilder() {
                         </motion.div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-slate-100 to-slate-50 flex flex-col">
+                    <div className="bg-gradient-to-br from-slate-100 to-slate-50 flex flex-col h-full">
                         <div className="p-4 border-b border-slate-200 bg-white/50 backdrop-blur-sm">
                             <h2 className="font-semibold text-slate-700">Предпросмотр</h2>
                         </div>
