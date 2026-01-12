@@ -152,7 +152,7 @@ export default function AgentBuilder() {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="flex-1 overflow-hidden"
+                            className="flex-1"
                         >
                             {activeTab === 'create' ? (
                                 <BuilderChat
@@ -175,7 +175,7 @@ export default function AgentBuilder() {
                             <h2 className="font-semibold text-slate-700">Предпросмотр</h2>
                         </div>
 
-                        <div className="flex-1 p-6 flex items-center justify-center overflow-hidden">
+                        <div className="flex-1 p-6 flex items-center justify-center">
                             <div className="w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl shadow-slate-200/50 overflow-hidden border border-slate-200">
                                 <PreviewChat agentData={agentData} />
                             </div>
