@@ -131,7 +131,7 @@ export default function AgentBuilder() {
 
                         <Button
                             onClick={handleSave}
-                            disabled={!agentData.name || isSaving}
+                            disabled={!agentData.name || isSaving || (!hasUnsavedChanges && (agentData.id || agentData.external_agent_id))}
                             className="bg-slate-900 hover:bg-slate-800 rounded-full px-6 disabled:opacity-50"
                         >
                             <Save className="w-4 h-4 mr-2" />
