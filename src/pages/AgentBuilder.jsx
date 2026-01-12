@@ -142,7 +142,7 @@ export default function AgentBuilder() {
             </header>
 
             <main className="max-w-screen-2xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-73px)]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-73px)]">
                     <div className="border-r border-slate-200 bg-white flex flex-col">
                         <div className="p-4 border-b border-slate-200">
                             <Tabs value={activeTab} onValueChange={setActiveTab}>
