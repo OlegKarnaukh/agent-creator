@@ -142,8 +142,8 @@ export default function AgentBuilder() {
             </header>
 
             <main className="max-w-screen-2xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-73px)] overflow-hidden">
-                    <div className="border-r border-slate-200 bg-white flex flex-col h-full">
+                <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-73px)]">
+                    <div className="border-r border-slate-200 bg-white flex flex-col">
                         <div className="p-4 border-b border-slate-200">
                             <Tabs value={activeTab} onValueChange={setActiveTab}>
                                 <TabsList className="bg-slate-100 p-1 rounded-xl">
@@ -168,7 +168,7 @@ export default function AgentBuilder() {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="flex-1"
+                            className="flex-1 overflow-hidden"
                         >
                             {activeTab === 'create' ? (
                                 <BuilderChat
@@ -186,7 +186,7 @@ export default function AgentBuilder() {
                         </motion.div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-slate-100 to-slate-50 flex flex-col h-full">
+                    <div className="bg-gradient-to-br from-slate-100 to-slate-50 flex flex-col">
                         <div className="p-4 border-b border-slate-200 bg-white/50 backdrop-blur-sm">
                             <h2 className="font-semibold text-slate-700">Предпросмотр</h2>
                         </div>
