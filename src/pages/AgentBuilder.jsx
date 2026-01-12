@@ -126,7 +126,7 @@ export default function AgentBuilder() {
             </header>
 
             <main className="max-w-screen-2xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-73px)]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(100vh-73px)] overflow-hidden">
                     <div className="border-r border-slate-200 bg-white flex flex-col h-full">
                         <div className="p-4 border-b border-slate-200">
                             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -174,8 +174,8 @@ export default function AgentBuilder() {
                         <div className="p-4 border-b border-slate-200 bg-white/50 backdrop-blur-sm">
                             <h2 className="font-semibold text-slate-700">Предпросмотр</h2>
                         </div>
-                        
-                        <div className="flex-1 p-6 flex items-center justify-center">
+
+                        <div className="flex-1 p-6 flex items-center justify-center overflow-hidden">
                             <div className="w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl shadow-slate-200/50 overflow-hidden border border-slate-200">
                                 <PreviewChat agentData={agentData} />
                             </div>
