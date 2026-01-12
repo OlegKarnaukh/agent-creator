@@ -1,11 +1,11 @@
-import AgentBuilder from './pages/AgentBuilder';
 import Dashboard from './pages/Dashboard';
+import AgentBuilder from './pages/AgentBuilder';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "AgentBuilder": AgentBuilder,
     "Dashboard": Dashboard,
+    "AgentBuilder": AgentBuilder,
 }
 
 export const pagesConfig = {
