@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MessageSquare, Phone, Send, Globe, Settings, ExternalLink } from 'lucide-react';
+import TelegramConnect from '@/components/channels/TelegramConnect';
+import WhatsAppConnect from '@/components/channels/WhatsAppConnect';
 
 const channels = [
     {
@@ -36,10 +41,29 @@ const channels = [
 ];
 
 export default function ChannelSettings({ agent }) {
-    const enabledChannels = agent?.channels || [];
+    const [connectDialog, setConnectDialog] = useState(null);
+
+    const { data: connectedChannels = [], refetch } = useQuery({
+        queryKey: ['channels', agent?.id],
+        queryFn: () => base44.entities.Channel.filter({ agent_id: agent?.id }),
+        enabled: !!agent?.id,
+    });
 
     const isChannelEnabled = (channelId) => {
-        return enabledChannels.some(c => c.type === channelId && c.enabled);
+        return connectedChannels.some(c => c.type === channelId && c.status === 'active');
+    };
+
+    const getChannelData = (channelId) => {
+        return connectedChannels.find(c => c.type === channelId);
+    };
+
+    const handleConnect = (channelId) => {
+        setConnectDialog(channelId);
+    };
+
+    const handleConnectionSuccess = () => {
+        refetch();
+        setConnectDialog(null);
     };
 
     return (
@@ -90,11 +114,12 @@ export default function ChannelSettings({ agent }) {
                                     variant={isEnabled ? "outline" : "default"}
                                     size="sm"
                                     className={isEnabled ? "" : "bg-slate-900 hover:bg-slate-800"}
+                                    onClick={() => isEnabled ? null : handleConnect(channel.id)}
                                 >
                                     {isEnabled ? (
                                         <>
                                             <ExternalLink className="w-3 h-3 mr-1" />
-                                            Открыть
+                                            Настройки
                                         </>
                                     ) : (
                                         'Подключить'
