@@ -155,14 +155,16 @@ export default function ChannelSettings({ agent }) {
                         />
                     )}
                     {connectDialog === 'phone' && (
-                        <div className="p-4 text-center text-slate-500">
-                            Интеграция телефонии в разработке
-                        </div>
+                        <PhoneConnect 
+                            agentId={agent?.id} 
+                            onSuccess={handleConnectionSuccess}
+                        />
                     )}
                     {connectDialog === 'website' && (
-                        <div className="p-4 text-center text-slate-500">
-                            Виджет для сайта в разработке
-                        </div>
+                        <WebsiteConnect 
+                            agentId={agent?.id} 
+                            onSuccess={handleConnectionSuccess}
+                        />
                     )}
                 </DialogContent>
             </Dialog>
