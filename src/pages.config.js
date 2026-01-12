@@ -3,6 +3,8 @@ import Dashboard from './pages/Dashboard';
 import Conversations from './pages/Conversations';
 import Billing from './pages/Billing';
 import Settings from './pages/Settings';
+import Agents from './pages/Agents';
+import Channels from './pages/Channels';
 import __Layout from './Layout.jsx';
 
 
@@ -12,6 +14,8 @@ export const PAGES = {
     "Conversations": Conversations,
     "Billing": Billing,
     "Settings": Settings,
+    "Agents": Agents,
+    "Channels": Channels,
 }
 
 export const pagesConfig = {

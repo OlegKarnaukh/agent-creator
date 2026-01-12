@@ -15,9 +15,9 @@ import { Button } from '@/components/ui/button';
 
 const navigation = [
     { name: 'Статистика', page: 'Dashboard', icon: LayoutDashboard },
+    { name: 'Агенты', page: 'Agents', icon: Bot },
     { name: 'Диалоги', page: 'Conversations', icon: MessageSquare },
-    { name: 'Агенты', page: 'Dashboard', icon: Bot },
-    { name: 'Каналы', page: 'Dashboard', icon: Zap },
+    { name: 'Каналы', page: 'Channels', icon: Zap },
     { name: 'Биллинг', page: 'Billing', icon: CreditCard },
 ];
 
