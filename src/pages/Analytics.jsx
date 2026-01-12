@@ -109,14 +109,19 @@ export default function Analytics() {
         }
     ];
 
-    // Симуляция данных роста за последние 30 дней
-    const growthData = Array.from({ length: 30 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
+    // Данные за текущий календарный месяц
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const currentDay = now.getDate();
+    
+    const growthData = Array.from({ length: currentDay }, (_, i) => {
+        const day = i + 1;
         return {
-            date: date.toLocaleDateString('ru', { day: 'numeric', month: 'short' }),
-            users: Math.round((activeUsers || 50) * (0.4 + i * 0.02)),
-            revenue: Math.round((mrr || 50000) * (0.3 + i * 0.023) / 100)
+            date: `${day}`,
+            users: Math.round((activeUsers || 50) * (0.5 + (day / currentDay) * 0.5)),
+            revenue: Math.round((mrr || 50000) * (0.4 + (day / currentDay) * 0.6) / 100)
         };
     });
 
@@ -150,36 +155,77 @@ export default function Analytics() {
                         transition={{ delay: 0.4 }}
                         className="bg-white rounded-2xl p-6 border border-slate-200"
                     >
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Рост за месяц</h3>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                            {new Date().toLocaleDateString('ru', { month: 'long', year: 'numeric' })}
+                        </h3>
                         <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={growthData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                <XAxis dataKey="date" stroke="#64748b" />
-                                <YAxis yAxisId="left" stroke="#64748b" />
-                                <YAxis yAxisId="right" orientation="right" stroke="#64748b" />
+                            <LineChart data={growthData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                                <defs>
+                                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1}/>
+                                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="0" stroke="#f1f5f9" vertical={false} />
+                                <XAxis 
+                                    dataKey="date" 
+                                    stroke="#94a3b8" 
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis 
+                                    yAxisId="left" 
+                                    stroke="#94a3b8" 
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis 
+                                    yAxisId="right" 
+                                    orientation="right" 
+                                    stroke="#94a3b8" 
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
                                 <Tooltip 
                                     contentStyle={{ 
                                         backgroundColor: '#fff', 
-                                        border: '1px solid #e2e8f0',
-                                        borderRadius: '8px'
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                                     }}
                                 />
-                                <Legend />
+                                <Legend 
+                                    wrapperStyle={{ paddingTop: '20px' }}
+                                    iconType="circle"
+                                />
                                 <Line 
                                     yAxisId="left"
                                     type="monotone" 
                                     dataKey="users" 
                                     stroke="#0ea5e9" 
-                                    strokeWidth={2}
+                                    strokeWidth={3}
                                     name="Пользователи"
+                                    dot={false}
+                                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                                    fill="url(#colorUsers)"
                                 />
                                 <Line 
                                     yAxisId="right"
                                     type="monotone" 
                                     dataKey="revenue" 
                                     stroke="#10b981" 
-                                    strokeWidth={2}
+                                    strokeWidth={3}
                                     name="Доход (₽)"
+                                    dot={false}
+                                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                                    fill="url(#colorRevenue)"
                                 />
                             </LineChart>
                         </ResponsiveContainer>
