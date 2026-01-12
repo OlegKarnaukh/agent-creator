@@ -1,0 +1,97 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { 
+    LayoutDashboard, 
+    MessageSquare, 
+    Bot, 
+    Zap, 
+    CreditCard,
+    Settings,
+    LogOut
+} from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+
+const navigation = [
+    { name: 'Статистика', page: 'Dashboard', icon: LayoutDashboard },
+    { name: 'Диалоги', page: 'Conversations', icon: MessageSquare },
+    { name: 'Агенты', page: 'Dashboard', icon: Bot },
+    { name: 'Каналы', page: 'Dashboard', icon: Zap },
+    { name: 'Биллинг', page: 'Billing', icon: CreditCard },
+];
+
+export default function Sidebar({ user }) {
+    const location = useLocation();
+    const currentPath = location.pathname;
+
+    const handleLogout = async () => {
+        await base44.auth.logout();
+    };
+
+    const isActive = (page) => {
+        return currentPath === createPageUrl(page) || currentPath === `/${page}`;
+    };
+
+    return (
+        <div className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen">
+            <div className="p-6 border-b border-slate-200">
+                <h1 className="text-xl font-bold text-slate-900">NeuroSeller</h1>
+                <p className="text-xs text-slate-500 mt-1">AI Агенты для бизнеса</p>
+            </div>
+
+            <nav className="flex-1 p-4 space-y-1">
+                {navigation.map((item) => {
+                    const active = isActive(item.page);
+                    return (
+                        <Link
+                            key={item.name}
+                            to={createPageUrl(item.page)}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                                active
+                                    ? 'bg-slate-900 text-white'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            <item.icon className="w-5 h-5" />
+                            <span className="text-sm font-medium">{item.name}</span>
+                        </Link>
+                    );
+                })}
+            </nav>
+
+            <div className="p-4 border-t border-slate-200 space-y-2">
+                <Link to={createPageUrl('Settings')}>
+                    <Button variant="ghost" className="w-full justify-start">
+                        <Settings className="w-4 h-4 mr-3" />
+                        Настройки
+                    </Button>
+                </Link>
+                <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={handleLogout}
+                >
+                    <LogOut className="w-4 h-4 mr-3" />
+                    Выйти
+                </Button>
+            </div>
+
+            {user && (
+                <div className="p-4 bg-slate-50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-semibold">
+                            {user.email?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 truncate">
+                                {user.full_name || 'Пользователь'}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

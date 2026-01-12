@@ -1,6 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import Sidebar from './components/layout/Sidebar';
+import { base44 } from '@/api/base44Client';
+
+// Страницы без sidebar
+const pagesWithoutSidebar = ['AgentBuilder'];
 
 export default function Layout({ children, currentPageName }) {
+    const [user, setUser] = useState(null);
+    const location = useLocation();
+    const showSidebar = !pagesWithoutSidebar.includes(currentPageName);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const userData = await base44.auth.me();
+                setUser(userData);
+            } catch (error) {
+                console.error('Error fetching user:', error);
+            }
+        };
+        fetchUser();
+    }, []);
+
     return (
         <div className="min-h-screen bg-slate-50">
             <style>{`
@@ -37,7 +59,17 @@ export default function Layout({ children, currentPageName }) {
                     background-color: #cbd5e1;
                 }
             `}</style>
-            {children}
+            
+            {showSidebar ? (
+                <div className="flex">
+                    <Sidebar user={user} />
+                    <div className="flex-1">
+                        {children}
+                    </div>
+                </div>
+            ) : (
+                children
+            )}
         </div>
     );
 }
