@@ -8,7 +8,8 @@ import {
     Zap, 
     CreditCard,
     Settings,
-    LogOut
+    LogOut,
+    BarChart3
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ const navigation = [
     { name: 'Диалоги', page: 'Conversations', icon: MessageSquare },
     { name: 'Каналы', page: 'Channels', icon: Zap },
     { name: 'Биллинг', page: 'Billing', icon: CreditCard },
+    { name: 'Аналитика', page: 'Analytics', icon: BarChart3 },
 ];
 
 export default function Sidebar({ user }) {
