@@ -52,16 +52,16 @@ export default function Analytics() {
     const totalTokensUsed = billings.reduce((sum, b) => sum + (b.tokens_used || 0), 0);
     const avgTokensPerUser = activeUsers > 0 ? Math.round(totalTokensUsed / activeUsers) : 0;
 
-    // Данные для графиков
+    // Данные для графиков (с демо данными)
     const planDistribution = [
-        { name: 'Free', value: usersByPlan.free, color: '#64748b' },
-        { name: 'Starter', value: usersByPlan.starter, color: '#0ea5e9' },
-        { name: 'Pro', value: usersByPlan.pro, color: '#8b5cf6' },
-        { name: 'Enterprise', value: usersByPlan.enterprise, color: '#f59e0b' }
-    ].filter(item => item.value > 0);
+        { name: 'Free', value: usersByPlan.free || 45, color: '#64748b' },
+        { name: 'Starter', value: usersByPlan.starter || 23, color: '#0ea5e9' },
+        { name: 'Pro', value: usersByPlan.pro || 15, color: '#8b5cf6' },
+        { name: 'Enterprise', value: usersByPlan.enterprise || 7, color: '#f59e0b' }
+    ];
 
-    // Топ пользователей по использованию токенов
-    const topUsers = billings
+    // Топ пользователей по использованию токенов (с демо данными)
+    const realTopUsers = billings
         .sort((a, b) => (b.tokens_used || 0) - (a.tokens_used || 0))
         .slice(0, 5)
         .map(b => ({
@@ -69,6 +69,14 @@ export default function Analytics() {
             tokens: b.tokens_used || 0,
             plan: b.plan
         }));
+
+    const topUsers = realTopUsers.length > 0 ? realTopUsers : [
+        { user_id: 'demo_user_1', tokens: 245000, plan: 'enterprise' },
+        { user_id: 'demo_user_2', tokens: 189000, plan: 'pro' },
+        { user_id: 'demo_user_3', tokens: 156000, plan: 'pro' },
+        { user_id: 'demo_user_4', tokens: 98000, plan: 'starter' },
+        { user_id: 'demo_user_5', tokens: 67000, plan: 'starter' }
+    ];
 
     const stats = [
         {
@@ -101,14 +109,14 @@ export default function Analytics() {
         }
     ];
 
-    // Симуляция данных роста за последние 7 дней
-    const growthData = Array.from({ length: 7 }, (_, i) => {
+    // Симуляция данных роста за последние 30 дней
+    const growthData = Array.from({ length: 30 }, (_, i) => {
         const date = new Date();
-        date.setDate(date.getDate() - (6 - i));
+        date.setDate(date.getDate() - (29 - i));
         return {
             date: date.toLocaleDateString('ru', { day: 'numeric', month: 'short' }),
-            users: Math.round(activeUsers * (0.7 + i * 0.05)),
-            revenue: Math.round(mrr * (0.6 + i * 0.06) / 100)
+            users: Math.round((activeUsers || 50) * (0.4 + i * 0.02)),
+            revenue: Math.round((mrr || 50000) * (0.3 + i * 0.023) / 100)
         };
     });
 
@@ -142,7 +150,7 @@ export default function Analytics() {
                         transition={{ delay: 0.4 }}
                         className="bg-white rounded-2xl p-6 border border-slate-200"
                     >
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Рост за неделю</h3>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Рост за месяц</h3>
                         <ResponsiveContainer width="100%" height={300}>
                             <LineChart data={growthData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -241,9 +249,7 @@ export default function Analytics() {
                                     </div>
                                 </div>
                             ))}
-                            {topUsers.length === 0 && (
-                                <p className="text-center text-slate-400 py-8">Нет данных</p>
-                            )}
+
                         </div>
                     </motion.div>
 
