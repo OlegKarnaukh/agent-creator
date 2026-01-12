@@ -130,6 +130,42 @@ export default function ChannelSettings({ agent }) {
                     );
                 })}
             </div>
+
+            <Dialog open={!!connectDialog} onOpenChange={() => setConnectDialog(null)}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {connectDialog === 'telegram' && 'Подключить Telegram'}
+                            {connectDialog === 'whatsapp' && 'Подключить WhatsApp'}
+                            {connectDialog === 'phone' && 'Подключить телефонию'}
+                            {connectDialog === 'website' && 'Подключить виджет'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    
+                    {connectDialog === 'telegram' && (
+                        <TelegramConnect 
+                            agentId={agent?.id} 
+                            onSuccess={handleConnectionSuccess}
+                        />
+                    )}
+                    {connectDialog === 'whatsapp' && (
+                        <WhatsAppConnect 
+                            agentId={agent?.id} 
+                            onSuccess={handleConnectionSuccess}
+                        />
+                    )}
+                    {connectDialog === 'phone' && (
+                        <div className="p-4 text-center text-slate-500">
+                            Интеграция телефонии в разработке
+                        </div>
+                    )}
+                    {connectDialog === 'website' && (
+                        <div className="p-4 text-center text-slate-500">
+                            Виджет для сайта в разработке
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
