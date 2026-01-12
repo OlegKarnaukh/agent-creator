@@ -17,6 +17,7 @@ export default function AgentBuilder() {
     const [activeTab, setActiveTab] = useState('create');
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
@@ -42,6 +43,10 @@ export default function AgentBuilder() {
 
     const handleAgentUpdate = (updates) => {
         setAgentData(prev => ({ ...prev, ...updates }));
+        // Отмечаем что есть несохранённые изменения (только если агент уже создан)
+        if (agentData.id || agentData.external_agent_id) {
+            setHasUnsavedChanges(true);
+        }
     };
 
     const handleSave = async () => {
@@ -69,8 +74,9 @@ export default function AgentBuilder() {
             }));
             
             setSaveSuccess(true);
+            setHasUnsavedChanges(false);
             setTimeout(() => setSaveSuccess(false), 3000);
-            
+
         } catch (error) {
             console.error('Error saving agent:', error);
             alert('❌ Ошибка при сохранении агента: ' + error.message);
@@ -100,6 +106,16 @@ export default function AgentBuilder() {
                     
                     <div className="flex items-center gap-3">
                         <AnimatePresence>
+                            {hasUnsavedChanges && !saveSuccess && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="flex items-center gap-2 bg-amber-50 text-amber-700 px-4 py-2 rounded-full border border-amber-200"
+                                >
+                                    <span className="text-sm font-medium">Несохранённые изменения</span>
+                                </motion.div>
+                            )}
                             {saveSuccess && (
                                 <motion.div
                                     initial={{ opacity: 0, x: 20 }}
@@ -112,14 +128,14 @@ export default function AgentBuilder() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                        
+
                         <Button
                             onClick={handleSave}
                             disabled={!agentData.name || isSaving}
                             className="bg-slate-900 hover:bg-slate-800 rounded-full px-6 disabled:opacity-50"
                         >
                             <Save className="w-4 h-4 mr-2" />
-                            {isSaving ? 'Сохранение...' : 'Сохранить'}
+                            {isSaving ? 'Сохранение...' : (agentData.id || agentData.external_agent_id) ? 'Обновить' : 'Сохранить'}
                         </Button>
                     </div>
                 </div>
