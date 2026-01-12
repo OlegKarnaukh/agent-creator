@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { MessageSquare, Phone, Send, Globe, Settings, ExternalLink } from 'lucide-react';
 import TelegramConnect from '@/components/channels/TelegramConnect';
 import WhatsAppConnect from '@/components/channels/WhatsAppConnect';
+import PhoneConnect from '@/components/channels/PhoneConnect';
+import WebsiteConnect from '@/components/channels/WebsiteConnect';
 
 const channels = [
     {
