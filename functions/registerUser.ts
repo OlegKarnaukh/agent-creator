@@ -11,14 +11,28 @@ Deno.serve(async (req) => {
             );
         }
 
-        const base44 = createClientFromRequest(req);
-
-        // Регистрируем пользователя через встроенный API
-        const user = await base44.asServiceRole.auth.createUser({
-            email,
-            password,
-            full_name: fullName
+        // Используем встроенный Base44 auth API напрямую
+        const BASE44_APP_ID = Deno.env.get('BASE44_APP_ID');
+        
+        const registerResponse = await fetch('https://api.base44.com/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-App-ID': BASE44_APP_ID
+            },
+            body: JSON.stringify({
+                email,
+                password,
+                full_name: fullName
+            })
         });
+
+        if (!registerResponse.ok) {
+            const error = await registerResponse.json();
+            throw new Error(error.message || 'Ошибка регистрации');
+        }
+
+        const user = await registerResponse.json();
 
         return Response.json({ 
             success: true, 
