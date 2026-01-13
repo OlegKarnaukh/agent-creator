@@ -31,12 +31,12 @@ export default function Sidebar({ user }) {
 
     return (
         <div className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen">
-            <div className="p-6 border-b border-slate-200">
+            <div className="p-6 border-b border-slate-200 flex-shrink-0">
                 <h1 className="text-xl font-bold text-slate-900">NeuroSeller</h1>
                 <p className="text-xs text-slate-500 mt-1">AI Агенты для бизнеса</p>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className="flex-1 overflow-y-auto p-4 space-y-1">
                 {navigation.map((item) => {
                     const active = isActive(item.page);
                     return (
@@ -57,9 +57,9 @@ export default function Sidebar({ user }) {
             </nav>
 
             {user && (
-                <Link to={createPageUrl('Settings')} className="p-4 bg-slate-50 hover:bg-slate-100 transition-colors block">
+                <Link to={createPageUrl('Settings')} className="p-4 bg-slate-50 hover:bg-slate-100 transition-colors block flex-shrink-0 border-t border-slate-200">
                     <div className="flex items-center gap-3 cursor-pointer">
-                        <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-semibold flex-shrink-0">
                             {user.email?.[0]?.toUpperCase() || 'U'}
                         </div>
                         <div className="flex-1 min-w-0">
