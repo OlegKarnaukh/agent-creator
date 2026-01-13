@@ -36,7 +36,7 @@ export default function Sidebar({ user }) {
                 <p className="text-xs text-slate-500 mt-1">AI Агенты для бизнеса</p>
             </div>
 
-            <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+            <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
                 {navigation.map((item) => {
                     const active = isActive(item.page);
                     return (
