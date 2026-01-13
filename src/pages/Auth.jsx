@@ -63,15 +63,30 @@ export default function Auth() {
                 toast.success('Успешный вход!');
                 navigate(createPageUrl('Dashboard'));
             } else {
-                await base44.auth.register({
+                try {
+                    await base44.auth.register({
+                        email: formData.email,
+                        password: formData.password,
+                        full_name: formData.full_name
+                    });
+                } catch (registerError) {
+                    if (registerError.message?.includes('email') || registerError.message?.includes('verification')) {
+                        setEmailConfirmationRequired(true);
+                        toast.info('Проверьте почту для подтверждения');
+                        setIsLoading(false);
+                        return;
+                    }
+                    throw registerError;
+                }
+
+                await base44.auth.login({
                     email: formData.email,
-                    password: formData.password,
-                    full_name: formData.full_name
+                    password: formData.password
                 });
                 const currentUser = await base44.auth.me();
                 await syncUser(currentUser);
                 toast.success('Аккаунт создан!');
-                navigate(createPageUrl('AgentBuilder'));
+                navigate(createPageUrl('Dashboard'));
             }
         } catch (error) {
             toast.error(error.message || 'Ошибка при авторизации');
