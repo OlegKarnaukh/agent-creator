@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import StatCard from '@/components/dashboard/StatCard';
 import { Button } from "@/components/ui/button";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
     const navigate = useNavigate();
