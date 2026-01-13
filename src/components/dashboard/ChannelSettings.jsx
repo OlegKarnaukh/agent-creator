@@ -228,7 +228,13 @@ export default function ChannelSettings({ agent }) {
                             onSuccess={handleConnectionSuccess}
                         />
                     )}
-                    {['avito', 'vk', 'max'].includes(connectDialog) && (
+                    {connectDialog === 'max' && (
+                        <MaxConnect 
+                            agentId={agent?.id} 
+                            onSuccess={handleConnectionSuccess}
+                        />
+                    )}
+                    {['avito', 'vk'].includes(connectDialog) && (
                         <div className="p-4 text-center text-slate-600">
                             <p className="text-sm">Скоро будет доступно</p>
                         </div>
