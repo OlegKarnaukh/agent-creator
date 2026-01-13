@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -27,9 +28,9 @@ export default function Landing() {
     const handleStartClick = async () => {
         const isAuthenticated = await base44.auth.isAuthenticated();
         if (isAuthenticated) {
-            navigate('/agents');
+            navigate(createPageUrl('Agents'));
         } else {
-            await base44.auth.redirectToLogin();
+            await base44.auth.redirectToLogin(createPageUrl('Landing'));
         }
     };
 
