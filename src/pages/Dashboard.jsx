@@ -159,7 +159,7 @@ export default function Dashboard() {
                                         type="monotone" 
                                         dataKey="conversations" 
                                         stroke="#7c3aed" 
-                                        dot={{ fill: '#7c3aed', r: 4 }}
+                                        dot={false}
                                         strokeWidth={2}
                                     />
                                 </LineChart>
