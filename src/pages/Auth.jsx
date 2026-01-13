@@ -11,12 +11,6 @@ import { toast } from 'sonner';
 export default function Auth() {
     const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
-
-    // Логируем доступные методы Auth SDK
-    React.useEffect(() => {
-        console.log('Доступные методы base44.auth:', Object.keys(base44.auth));
-        console.log('Полный объект base44.auth:', base44.auth);
-    }, []);
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
@@ -25,10 +19,6 @@ export default function Auth() {
     });
     const [errors, setErrors] = useState({});
     const [emailConfirmationRequired, setEmailConfirmationRequired] = useState(false);
-    const [verificationCode, setVerificationCode] = useState('');
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [verificationError, setVerificationError] = useState('');
-    const [isResending, setIsResending] = useState(false);
 
     const validateEmail = (email) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -126,65 +116,6 @@ export default function Auth() {
         setFormData({ email: '', password: '', full_name: '' });
         setErrors({});
         setEmailConfirmationRequired(false);
-        setVerificationCode('');
-    };
-
-    const handleVerifyEmail = async (e) => {
-        e.preventDefault();
-        console.log('Попытка верификации с кодом:', verificationCode);
-        
-        if (verificationCode.length !== 6) {
-            toast.error('Код должен состоять из 6 цифр');
-            return;
-        }
-
-        setIsVerifying(true);
-        setVerificationError('');
-        try {
-            console.log('Вызов base44.auth.verifyEmail()...');
-            await base44.auth.verifyEmail(verificationCode);
-            console.log('Верификация успешна!');
-            
-            console.log('Попытка входа после верификации...');
-            await base44.auth.login({
-                email: formData.email,
-                password: formData.password
-            });
-            const currentUser = await base44.auth.me();
-            console.log('Пользователь получен:', currentUser);
-            
-            await syncUser(currentUser);
-            
-            toast.success('Email подтвержден!');
-            navigate(createPageUrl('Dashboard'));
-        } catch (error) {
-            console.error('Ошибка при верификации:', error);
-            const errorMsg = error.message || 'Неверный код подтверждения';
-            setVerificationError(errorMsg);
-            toast.error(errorMsg);
-        } finally {
-            setIsVerifying(false);
-        }
-    };
-
-    const handleResendCode = async () => {
-        console.log('Повторная отправка кода на:', formData.email);
-        setIsResending(true);
-        setVerificationError('');
-        try {
-            console.log('Вызов base44.auth.resendVerificationCode()...');
-            await base44.auth.resendVerificationCode(formData.email);
-            console.log('Код повторно отправлен');
-            toast.success('Код повторно отправлен на почту');
-            setVerificationCode('');
-        } catch (error) {
-            console.error('Ошибка при повторной отправке:', error);
-            const errorMsg = error.message || 'Не удалось отправить код повторно';
-            setVerificationError(errorMsg);
-            toast.error(errorMsg);
-        } finally {
-            setIsResending(false);
-        }
     };
 
     return (
@@ -278,67 +209,21 @@ export default function Auth() {
                     </form>
 
                     {emailConfirmationRequired && (
-                        <form onSubmit={handleVerifyEmail} className="mt-6 space-y-4">
-                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p className="text-blue-700 text-sm text-center font-medium">
-                                    Введите код из письма
-                                </p>
-                                <p className="text-blue-600 text-xs text-center mt-1">
-                                    Отправлено на {formData.email}
-                                </p>
-                            </div>
-                            <Input
-                                type="text"
-                                value={verificationCode}
-                                onChange={(e) => {
-                                    setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6));
-                                    setVerificationError('');
-                                }}
-                                placeholder="000000"
-                                maxLength="6"
-                                className={`bg-slate-50 text-center tracking-widest text-lg font-semibold ${verificationError ? 'border-red-500' : 'border-slate-200'}`}
-                                disabled={isVerifying}
-                            />
-                            {verificationError && (
-                                <p className="text-red-600 text-sm text-center">{verificationError}</p>
-                            )}
-                            <Button
-                                type="submit"
-                                disabled={isVerifying || verificationCode.length !== 6}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg"
-                            >
-                                {isVerifying ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
-                                        Подтверждение...
-                                    </>
-                                ) : (
-                                    'Подтвердить'
-                                )}
-                            </Button>
-                            <button
-                                type="button"
-                                onClick={handleResendCode}
-                                disabled={isResending || isVerifying}
-                                className="w-full text-blue-600 hover:text-blue-700 font-semibold text-sm py-2 transition-colors disabled:text-slate-400"
-                            >
-                                {isResending ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
-                                        Отправка...
-                                    </>
-                                ) : (
-                                    'Отправить код повторно'
-                                )}
-                            </button>
+                        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-blue-700 text-sm text-center font-medium mb-2">
+                                Подтвердите email
+                            </p>
+                            <p className="text-blue-600 text-xs text-center">
+                                На почту {formData.email} отправлена ссылка для подтверждения. Проверьте входящие письма и подтвердите аккаунт.
+                            </p>
                             <button
                                 type="button"
                                 onClick={handleToggle}
-                                className="text-slate-600 hover:text-slate-700 font-semibold text-sm block mx-auto mt-2"
+                                className="text-blue-600 hover:text-blue-700 font-semibold text-sm mt-4 block mx-auto"
                             >
                                 Вернуться к входу
                             </button>
-                        </form>
+                        </div>
                     )}
 
                     {!emailConfirmationRequired && (
