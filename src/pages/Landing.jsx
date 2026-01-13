@@ -26,8 +26,8 @@ export default function Landing() {
     }, []);
 
     const handleStartClick = () => {
-        base44.auth.redirectToLogin(createPageUrl('AgentBuilder'));
-    };
+            navigate(createPageUrl('Auth'));
+        };
 
     return (
         <div className="min-h-screen bg-white">
