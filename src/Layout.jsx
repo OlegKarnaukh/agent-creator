@@ -21,23 +21,6 @@ export default function Layout({ children, currentPageName }) {
     });
 
     useEffect(() => {
-        const script1 = document.createElement('script');
-        script1.type = 'text/javascript';
-        script1.src = 'https://cdn.weglot.com/weglot.min.js';
-        document.head.appendChild(script1);
-
-        script1.onload = () => {
-            const script2 = document.createElement('script');
-            script2.textContent = `
-                Weglot.initialize({
-                    api_key: 'wg_87180c5271532a85c333a23ee2de846e8'
-                });
-            `;
-            document.head.appendChild(script2);
-        };
-    }, []);
-
-    useEffect(() => {
         const fetchUser = async () => {
             try {
                 const userData = await base44.auth.me();
