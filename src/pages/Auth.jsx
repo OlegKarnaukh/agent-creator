@@ -125,28 +125,59 @@ export default function Auth() {
 
     const handleVerifyEmail = async (e) => {
         e.preventDefault();
+        console.log('Попытка верификации с кодом:', verificationCode);
+        
         if (verificationCode.length !== 6) {
             toast.error('Код должен состоять из 6 цифр');
             return;
         }
 
         setIsVerifying(true);
+        setVerificationError('');
         try {
+            console.log('Вызов base44.auth.verifyEmail()...');
             await base44.auth.verifyEmail(verificationCode);
+            console.log('Верификация успешна!');
             
+            console.log('Попытка входа после верификации...');
             await base44.auth.login({
                 email: formData.email,
                 password: formData.password
             });
             const currentUser = await base44.auth.me();
+            console.log('Пользователь получен:', currentUser);
+            
             await syncUser(currentUser);
             
             toast.success('Email подтвержден!');
             navigate(createPageUrl('Dashboard'));
         } catch (error) {
-            toast.error(error.message || 'Неверный код подтверждения');
+            console.error('Ошибка при верификации:', error);
+            const errorMsg = error.message || 'Неверный код подтверждения';
+            setVerificationError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setIsVerifying(false);
+        }
+    };
+
+    const handleResendCode = async () => {
+        console.log('Повторная отправка кода на:', formData.email);
+        setIsResending(true);
+        setVerificationError('');
+        try {
+            console.log('Вызов base44.auth.resendVerificationCode()...');
+            await base44.auth.resendVerificationCode(formData.email);
+            console.log('Код повторно отправлен');
+            toast.success('Код повторно отправлен на почту');
+            setVerificationCode('');
+        } catch (error) {
+            console.error('Ошибка при повторной отправке:', error);
+            const errorMsg = error.message || 'Не удалось отправить код повторно';
+            setVerificationError(errorMsg);
+            toast.error(errorMsg);
+        } finally {
+            setIsResending(false);
         }
     };
 
