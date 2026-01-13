@@ -134,46 +134,50 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
                 </DropdownMenu>
             </div>
 
-            <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2">
-                    <Badge className={statusColors[agent.status || 'draft']}>
-                        {statusLabels[agent.status || 'draft']}
-                    </Badge>
-                </div>
+            {!isArchived && (
+                <>
+                    <div className="space-y-3 mb-4">
+                        <div className="flex items-center gap-2">
+                            <Badge className={statusColors[agent.status || 'draft']}>
+                                {statusLabels[agent.status || 'draft']}
+                            </Badge>
+                        </div>
 
-                {connectedChannels.length > 0 && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                        {connectedChannels.map((channel) => {
-                            const ChannelIcon = channelIcons[channel.type]?.icon || MessageSquare;
-                            const iconColor = channelIcons[channel.type]?.color || 'text-slate-500';
-                            return (
-                                <div 
-                                    key={channel.id}
-                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200"
-                                >
-                                    <ChannelIcon className={`w-3.5 h-3.5 ${iconColor}`} />
-                                    <span className="text-xs text-slate-600 capitalize">{channel.type}</span>
-                                </div>
-                            );
-                        })}
+                        {connectedChannels.length > 0 && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {connectedChannels.map((channel) => {
+                                    const ChannelIcon = channelIcons[channel.type]?.icon || MessageSquare;
+                                    const iconColor = channelIcons[channel.type]?.color || 'text-slate-500';
+                                    return (
+                                        <div 
+                                            key={channel.id}
+                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200"
+                                        >
+                                            <ChannelIcon className={`w-3.5 h-3.5 ${iconColor}`} />
+                                            <span className="text-xs text-slate-600 capitalize">{channel.type}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {connectedChannels.length === 0 && (
+                            <div className="text-xs text-slate-400">Нет подключённых каналов</div>
+                        )}
                     </div>
-                )}
 
-                {connectedChannels.length === 0 && (
-                    <div className="text-xs text-slate-400">Нет подключённых каналов</div>
-                )}
-            </div>
-
-            <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1 text-slate-500">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{agent.stats?.total_conversations || 0}</span>
-                </div>
-                <div className="flex items-center gap-1 text-emerald-600">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>{agent.stats?.conversion_rate || 0}%</span>
-                </div>
-            </div>
+                    <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1 text-slate-500">
+                            <MessageSquare className="w-4 h-4" />
+                            <span>{agent.stats?.total_conversations || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-emerald-600">
+                            <TrendingUp className="w-4 h-4" />
+                            <span>{agent.stats?.conversion_rate || 0}%</span>
+                        </div>
+                    </div>
+                </>
+            )}
 
             <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
                 <AlertDialogContent>
