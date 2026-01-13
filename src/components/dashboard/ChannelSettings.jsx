@@ -234,6 +234,26 @@ export default function ChannelSettings({ agent }) {
                     )}
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={!!disconnectDialog} onOpenChange={() => setDisconnectDialog(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Отключить {disconnectDialog?.type === 'telegram' ? 'Telegram' : 'канал'}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Бот будет отключен от системы. Вы сможете подключить его позже.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="flex gap-3">
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={() => disconnectMutation.mutate(disconnectDialog?.metadata?.railway_channel_id)}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Отключить
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
