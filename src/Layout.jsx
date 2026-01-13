@@ -34,10 +34,11 @@ export default function Layout({ children, currentPageName }) {
     }, []);
 
     useEffect(() => {
-        if (!user) return;
+        // Редирект только если пользователь авторизован И у него уже загрузились агенты
+        if (!user || agents.length === undefined) return;
 
         // Если пользователь на Landing и авторизован, редирект на Dashboard или AgentBuilder
-        if (currentPageName === 'Landing' && user) {
+        if (currentPageName === 'Landing') {
             if (agents.length > 0) {
                 navigate(createPageUrl('Dashboard'));
             } else {
