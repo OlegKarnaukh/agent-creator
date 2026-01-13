@@ -75,6 +75,22 @@ export default function Auth() {
         }
     };
 
+    const syncUser = async (user) => {
+        try {
+            await fetch('https://neuro-seller-production.up.railway.app/api/v1/users/ensure', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: user.email,
+                    full_name: user.full_name || user.email.split('@')[0],
+                    base44_id: user.id
+                })
+            });
+        } catch (error) {
+            console.error('Sync error:', error);
+        }
+    };
+
     const handleToggle = () => {
         setIsLogin(!isLogin);
         setFormData({ email: '', password: '', full_name: '' });
