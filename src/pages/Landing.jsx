@@ -25,17 +25,8 @@ export default function Landing() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const handleStartClick = async () => {
-        try {
-            const isAuthenticated = await base44.auth.isAuthenticated();
-            if (isAuthenticated) {
-                navigate(createPageUrl('Dashboard'));
-            } else {
-                navigate(createPageUrl('Auth') + '?mode=signup');
-            }
-        } catch (error) {
-            navigate(createPageUrl('Auth') + '?mode=signup');
-        }
+    const handleStartClick = () => {
+        base44.auth.redirectToSignUp();
     };
 
     return (
