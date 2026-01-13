@@ -346,7 +346,6 @@ export default function Landing() {
                             { icon: MessageSquare, label: 'WhatsApp', color: 'bg-green-500' },
                             { icon: Home, label: 'Авито', color: 'bg-red-500' },
                             { icon: Globe, label: 'Виджет', color: 'bg-purple-500' },
-                            { icon: Phone, label: 'Instagram', color: 'bg-pink-500' },
                             { icon: Users, label: 'ВКонтакте', color: 'bg-blue-600' },
                         ].map((item, i) => {
                             const Icon = item.icon;
