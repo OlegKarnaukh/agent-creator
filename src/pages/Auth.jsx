@@ -277,16 +277,25 @@ export default function Auth() {
                                 <p className="text-blue-700 text-sm text-center font-medium">
                                     Введите код из письма
                                 </p>
+                                <p className="text-blue-600 text-xs text-center mt-1">
+                                    Отправлено на {formData.email}
+                                </p>
                             </div>
                             <Input
                                 type="text"
                                 value={verificationCode}
-                                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                onChange={(e) => {
+                                    setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                                    setVerificationError('');
+                                }}
                                 placeholder="000000"
                                 maxLength="6"
-                                className="bg-slate-50 border-slate-200 text-center tracking-widest text-lg font-semibold"
+                                className={`bg-slate-50 text-center tracking-widest text-lg font-semibold ${verificationError ? 'border-red-500' : 'border-slate-200'}`}
                                 disabled={isVerifying}
                             />
+                            {verificationError && (
+                                <p className="text-red-600 text-sm text-center">{verificationError}</p>
+                            )}
                             <Button
                                 type="submit"
                                 disabled={isVerifying || verificationCode.length !== 6}
@@ -303,8 +312,23 @@ export default function Auth() {
                             </Button>
                             <button
                                 type="button"
+                                onClick={handleResendCode}
+                                disabled={isResending || isVerifying}
+                                className="w-full text-blue-600 hover:text-blue-700 font-semibold text-sm py-2 transition-colors disabled:text-slate-400"
+                            >
+                                {isResending ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
+                                        Отправка...
+                                    </>
+                                ) : (
+                                    'Отправить код повторно'
+                                )}
+                            </button>
+                            <button
+                                type="button"
                                 onClick={handleToggle}
-                                className="text-blue-600 hover:text-blue-700 font-semibold text-sm block mx-auto mt-3"
+                                className="text-slate-600 hover:text-slate-700 font-semibold text-sm block mx-auto mt-2"
                             >
                                 Вернуться к входу
                             </button>
