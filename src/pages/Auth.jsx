@@ -49,7 +49,7 @@ export default function Auth() {
             await base44.auth.signUp(email, password, fullName);
             await base44.auth.signIn(email, password);
             
-            // Новый пользователь → сразу на AgentBuilder
+            // Новый пользователь → сразу на AgentBuilder (без демо-данных)
             navigate(createPageUrl('AgentBuilder'));
         } catch (err) {
             setError(err.message || 'Ошибка регистрации. Попробуйте ещё раз');

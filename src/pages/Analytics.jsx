@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { DollarSign, Users, Zap, TrendingUp, Bot, MessageSquare, CreditCard } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 const COLORS = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981'];
 
@@ -16,6 +18,27 @@ const PLAN_PRICES = {
 };
 
 export default function Analytics() {
+    const navigate = useNavigate();
+    const [isAdmin, setIsAdmin] = useState(null);
+
+    useEffect(() => {
+        const checkAdmin = async () => {
+            try {
+                const user = await base44.auth.me();
+                if (user?.role !== 'admin') {
+                    navigate(createPageUrl('Dashboard'));
+                    return;
+                }
+                setIsAdmin(true);
+            } catch (error) {
+                navigate(createPageUrl('Dashboard'));
+            }
+        };
+        checkAdmin();
+    }, [navigate]);
+
+    if (isAdmin === null) return null;
+
     const { data: users = [] } = useQuery({
         queryKey: ['all_users'],
         queryFn: () => base44.entities.User.list(),
