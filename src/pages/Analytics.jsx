@@ -92,20 +92,6 @@ export default function Analytics() {
             icon: Users,
             color: 'blue',
             subtitle: `${usersByPlan.free} на бесплатном`
-        },
-        {
-            title: 'Всего агентов',
-            value: agents.length,
-            icon: Bot,
-            color: 'purple',
-            subtitle: `${agents.filter(a => a.status === 'active').length} активных`
-        },
-        {
-            title: 'Всего диалогов',
-            value: conversations.length,
-            icon: MessageSquare,
-            color: 'orange',
-            subtitle: `${conversations.filter(c => c.status === 'active').length} активных`
         }
     ];
 
@@ -134,7 +120,7 @@ export default function Analytics() {
                 </div>
 
                 {/* Основная статистика */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                     {stats.map((stat, idx) => (
                         <motion.div
                             key={idx}
