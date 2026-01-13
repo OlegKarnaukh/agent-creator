@@ -75,7 +75,7 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
                     onClick={onClick}
                     className={`bg-white rounded-2xl border cursor-pointer transition-all ${
                         isArchived 
-                            ? 'p-3 border-slate-100 hover:border-slate-200'
+                            ? 'p-2 border-slate-100 hover:border-slate-150 bg-slate-50'
                             : `p-5 ${isSelected 
                             ? 'border-slate-900 shadow-lg shadow-slate-200/50' 
                             : 'border-slate-100 hover:border-slate-200 hover:shadow-md'}`
