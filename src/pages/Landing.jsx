@@ -1,0 +1,504 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Zap, MessageSquare, TrendingUp, Clock, CheckCircle2, Send, Globe, Home, Users, Phone, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const fadeInUp = {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    transition: { duration: 0.5 },
+    viewport: { once: true }
+};
+
+export default function Landing() {
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    React.useEffect(() => {
+        const handleScroll = () => setIsScrolled(window.scrollY > 10);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    return (
+        <div className="min-h-screen bg-white">
+            {/* HEADER */}
+            <header className={`fixed top-0 w-full z-50 transition-all ${isScrolled ? 'bg-white border-b border-slate-100 shadow-sm' : 'bg-transparent'}`}>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <h1 className="text-2xl font-bold text-slate-900">NeuroSeller</h1>
+                    <button className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium text-sm">
+                        Запустить бесплатно
+                    </button>
+                </div>
+            </header>
+
+            {/* HERO */}
+            <section className="pt-32 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-slate-100">
+                <div className="max-w-4xl mx-auto text-center">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-5xl sm:text-6xl font-bold text-slate-900 mb-6 leading-tight"
+                    >
+                        Нейропродавец, который работает 24/7, отвечает мгновенно, выявляет потребности и доводит до оплаты
+                    </motion.h2>
+                    <motion.p 
+                        {...fadeInUp}
+                        className="text-xl text-slate-600 mb-8 leading-relaxed"
+                    >
+                        Закрывает возражения, досконально знает продукт и не просит зарплату. Бесплатно навсегда для малого бизнеса.
+                    </motion.p>
+                    <motion.button 
+                        {...fadeInUp}
+                        className="px-8 py-4 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-semibold text-lg mb-12"
+                    >
+                        Запустить бесплатно за 2 минуты
+                    </motion.button>
+
+                    {/* Stats Cards */}
+                    <motion.div 
+                        {...fadeInUp}
+                        className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                    >
+                        {[
+                            { label: 'Ответ клиенту', value: '3 сек' },
+                            { label: 'Работает', value: '24/7' },
+                            { label: 'Диалогов бесплатно', value: '300' },
+                            { label: 'До запуска', value: '2 мин' }
+                        ].map((stat, i) => (
+                            <div key={i} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-shadow">
+                                <p className="text-slate-500 text-xs sm:text-sm mb-2">{stat.label}</p>
+                                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{stat.value}</p>
+                            </div>
+                        ))}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* PROBLEMS */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+                <div className="max-w-6xl mx-auto">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold text-slate-900 text-center mb-12"
+                    >
+                        Почему вашему бизнесу нужен нейропродавец?
+                    </motion.h2>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {[
+                            {
+                                icon: Zap,
+                                title: 'Медленный ответ = потерянная заявка',
+                                desc: 'Даже лучший менеджер не может ответить мгновенно. Пока он отвлёкся на минуту, клиент уже написал трём конкурентам',
+                                metric: '80% уходят через 5 минут',
+                                color: 'text-red-500'
+                            },
+                            {
+                                icon: TrendingUp,
+                                title: 'Стоимость менеджера = 50-80К₽ в месяц',
+                                desc: 'Зарплата, налоги, обучение, больничные. А нейропродавец обрабатывает в 100 раз больше заявок за 0-3К₽',
+                                metric: 'Экономия до 90%',
+                                color: 'text-green-500'
+                            },
+                            {
+                                icon: Users,
+                                title: 'Текучка кадров и человеческий фактор',
+                                desc: 'Обучили менеджера 3 месяца — он ушёл. Плохое настроение, забыл скрипт, устал — клиент потерян',
+                                metric: 'Обучение 2-4 месяца',
+                                color: 'text-red-500'
+                            }
+                        ].map((item, i) => {
+                            const Icon = item.icon;
+                            return (
+                                <motion.div 
+                                    key={i}
+                                    {...fadeInUp}
+                                    className="bg-slate-50 rounded-2xl border border-slate-100 p-6 hover:border-slate-200 transition-all"
+                                >
+                                    <Icon className={`w-10 h-10 ${item.color} mb-4`} />
+                                    <h3 className="text-lg font-semibold text-slate-900 mb-3">{item.title}</h3>
+                                    <p className="text-slate-600 mb-4 text-sm leading-relaxed">{item.desc}</p>
+                                    <Badge className={item.color === 'text-red-500' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}>
+                                        {item.metric}
+                                    </Badge>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
+
+            {/* SOLUTION */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+                <div className="max-w-6xl mx-auto">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold text-slate-900 text-center mb-12"
+                    >
+                        Нейропродавец — ваш идеальный сотрудник
+                    </motion.h2>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[
+                            'Отвечает за 3 секунды — Мгновенная реакция на каждую заявку',
+                            'Прекрасно знает продукт — Изучает ваш сайт, прайс и документы за минуты',
+                            'Владеет лучшими техниками продаж — Изучил все книги и мастер-классы по продажам',
+                            'Всегда помнит скрипт — Никогда не забывает и не отклоняется от плана',
+                            'Не болеет и не уходит в отпуск — Работает 365 дней в году',
+                            'Не просит зарплату — Стоимость в 10 раз ниже менеджера'
+                        ].map((feature, i) => {
+                            const [title, desc] = feature.split(' — ');
+                            return (
+                                <motion.div 
+                                    key={i}
+                                    {...fadeInUp}
+                                    className="bg-white rounded-2xl border border-slate-100 p-6 flex gap-4 hover:shadow-md transition-shadow"
+                                >
+                                    <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h3 className="font-semibold text-slate-900 mb-1">{title}</h3>
+                                        <p className="text-sm text-slate-600">{desc}</p>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
+
+            {/* COMPARISON TABLE */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+                <div className="max-w-6xl mx-auto">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold text-slate-900 text-center mb-12"
+                    >
+                        Нейропродавец vs Менеджер
+                    </motion.h2>
+
+                    <motion.div 
+                        {...fadeInUp}
+                        className="overflow-x-auto"
+                    >
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="border-b-2 border-slate-200">
+                                    <th className="text-left py-4 px-4 font-semibold text-slate-900">Параметр</th>
+                                    <th className="text-center py-4 px-4 font-semibold text-slate-900">Нейропродавец</th>
+                                    <th className="text-center py-4 px-4 font-semibold text-slate-900">Менеджер</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[
+                                    ['Скорость ответа', '3 секунды', '5-30 минут'],
+                                    ['Стоимость', 'От 0₽/мес', 'От 50 000₽/мес'],
+                                    ['Время работы', '24/7/365', '8 часов/день'],
+                                    ['Обучение', '5 минут', '2-4 месяца'],
+                                    ['Больничные/отпуск', 'Не болеет', '20-30 дней/год'],
+                                    ['Человеческий фактор', 'Всегда по скрипту', 'Настроение, усталость'],
+                                    ['Масштабируемость', 'Безграничная', 'Найм и обучение']
+                                ].map((row, i) => (
+                                    <tr key={i} className={`border-b border-slate-100 ${i % 2 ? 'bg-slate-50' : ''}`}>
+                                        <td className="py-4 px-4 font-medium text-slate-900">{row[0]}</td>
+                                        <td className="py-4 px-4 text-center text-emerald-600 font-medium">✓ {row[1]}</td>
+                                        <td className="py-4 px-4 text-center text-red-600 font-medium">✗ {row[2]}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* HOW IT WORKS */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+                <div className="max-w-6xl mx-auto">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold text-slate-900 text-center mb-4"
+                    >
+                        Запуск за 2 минуты. Без программистов.
+                    </motion.h2>
+
+                    <div className="grid md:grid-cols-3 gap-8 mt-12">
+                        {[
+                            { num: '1', title: 'Настройте поведение', desc: 'Опишите, что продаёте и как общаться с клиентами' },
+                            { num: '2', title: 'Подключите каналы', desc: 'Telegram, WhatsApp, Авито, виджет на сайт' },
+                            { num: '3', title: 'Загрузите базу знаний', desc: 'Прикрепите прайс, FAQ, каталог' }
+                        ].map((step, i) => (
+                            <motion.div 
+                                key={i}
+                                {...fadeInUp}
+                                className="bg-white rounded-2xl border border-slate-100 p-8 text-center"
+                            >
+                                <div className="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                                    {step.num}
+                                </div>
+                                <h3 className="text-lg font-semibold text-slate-900 mb-2">{step.title}</h3>
+                                <p className="text-slate-600 text-sm">{step.desc}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <motion.div 
+                        {...fadeInUp}
+                        className="text-center mt-12"
+                    >
+                        <button className="px-8 py-4 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-semibold">
+                            Попробовать бесплатно
+                        </button>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* CASES */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+                <div className="max-w-6xl mx-auto">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold text-slate-900 text-center mb-12"
+                    >
+                        Уже работает в 200+ компаниях
+                    </motion.h2>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {[
+                            {
+                                metric: '+87%',
+                                company: 'Сеть танцевальных студий Your Way',
+                                result: 'Прибыль с 2,3 млн до 4,3 млн₽/мес'
+                            },
+                            {
+                                metric: '46,6%',
+                                company: 'Автопрокат в Казахстане',
+                                result: 'Конверсия с 10% до 46,6%'
+                            },
+                            {
+                                metric: '+100%',
+                                company: 'Производство косметики',
+                                result: 'Продажи с 420K до 840K₽/мес'
+                            }
+                        ].map((caseItem, i) => (
+                            <motion.div 
+                                key={i}
+                                {...fadeInUp}
+                                className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-100 p-8 hover:shadow-lg transition-shadow"
+                            >
+                                <div className="text-4xl font-bold text-slate-900 mb-4">{caseItem.metric}</div>
+                                <h3 className="font-semibold text-slate-900 mb-3">{caseItem.company}</h3>
+                                <p className="text-slate-600 text-sm mb-6">{caseItem.result}</p>
+                                <a href="#" className="text-slate-900 font-medium text-sm hover:text-slate-600">Читать кейс →</a>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* INTEGRATIONS */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+                <div className="max-w-6xl mx-auto text-center">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold text-slate-900 mb-4"
+                    >
+                        Работает там, где ваши клиенты
+                    </motion.h2>
+                    <motion.p 
+                        {...fadeInUp}
+                        className="text-slate-600 mb-12 text-lg"
+                    >
+                        Один нейропродавец → все каналы связи
+                    </motion.p>
+
+                    <motion.div 
+                        {...fadeInUp}
+                        className="grid grid-cols-3 md:grid-cols-5 gap-6"
+                    >
+                        {[
+                            { icon: Send, label: 'Telegram' },
+                            { icon: MessageSquare, label: 'WhatsApp' },
+                            { icon: Home, label: 'Авито' },
+                            { icon: Globe, label: 'Виджет' },
+                            { icon: Phone, label: 'Instagram' },
+                            { icon: Users, label: 'ВКонтакте' },
+                        ].map((item, i) => {
+                            const Icon = item.icon;
+                            return (
+                                <div key={i} className="bg-white rounded-xl border border-slate-100 p-4 flex flex-col items-center gap-2">
+                                    <Icon className="w-8 h-8 text-slate-600" />
+                                    <span className="text-xs text-slate-600 text-center">{item.label}</span>
+                                </div>
+                            );
+                        })}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* PRICING */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+                <div className="max-w-6xl mx-auto">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold text-slate-900 text-center mb-12"
+                    >
+                        Бесплатно навсегда для малого бизнеса
+                    </motion.h2>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {[
+                            {
+                                name: 'FREE',
+                                price: '0₽',
+                                period: 'навсегда',
+                                features: ['До 300 диалогов', '1 сотрудник', '1 канал', 'Базовая аналитика'],
+                                button: 'Запустить бесплатно',
+                                featured: false
+                            },
+                            {
+                                name: 'Starter',
+                                price: '2 990₽',
+                                period: '/месяц',
+                                features: ['5000 диалогов', '5 сотрудников', '5 каналов', 'Расширенная аналитика'],
+                                button: 'Попробовать 7 дней',
+                                featured: false
+                            },
+                            {
+                                name: 'Pro',
+                                price: '9 990₽',
+                                period: '/месяц',
+                                features: ['Все диалоги', '50 сотрудников', 'Все каналы + IP-телефония', 'Расширенная аналитика', 'CRM интеграция', 'Дожимающие серии', 'Приоритетная поддержка'],
+                                button: 'Попробовать 7 дней',
+                                featured: true
+                            }
+                        ].map((plan, i) => (
+                            <motion.div 
+                                key={i}
+                                {...fadeInUp}
+                                className={`rounded-2xl border p-8 transition-all ${
+                                    plan.featured 
+                                        ? 'border-slate-900 bg-slate-900 text-white shadow-lg scale-105' 
+                                        : 'border-slate-100 bg-white hover:shadow-lg'
+                                }`}
+                            >
+                                <h3 className={`text-2xl font-bold mb-1 ${plan.featured ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
+                                <div className="mb-6">
+                                    <span className={`text-4xl font-bold ${plan.featured ? 'text-white' : 'text-slate-900'}`}>{plan.price}</span>
+                                    <span className={`text-sm ${plan.featured ? 'text-slate-300' : 'text-slate-600'}`}>{plan.period}</span>
+                                </div>
+
+                                <ul className="space-y-3 mb-8">
+                                    {plan.features.map((feature, j) => (
+                                        <li key={j} className="flex gap-3">
+                                            <CheckCircle2 className={`w-5 h-5 flex-shrink-0 ${plan.featured ? 'text-emerald-300' : 'text-emerald-600'}`} />
+                                            <span className={`text-sm ${plan.featured ? 'text-slate-300' : 'text-slate-600'}`}>{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                <button className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+                                    plan.featured 
+                                        ? 'bg-white text-slate-900 hover:bg-slate-100' 
+                                        : 'bg-slate-900 text-white hover:bg-slate-800'
+                                }`}>
+                                    {plan.button}
+                                </button>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* FAQ */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+                <div className="max-w-3xl mx-auto">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold text-slate-900 text-center mb-12"
+                    >
+                        Часто задаваемые вопросы
+                    </motion.h2>
+
+                    <motion.div 
+                        {...fadeInUp}
+                    >
+                        <Accordion type="single" collapsible className="space-y-4">
+                            {[
+                                {
+                                    q: 'Нужны ли технические навыки для запуска?',
+                                    a: 'Нет! Интерфейс максимально простой. Настроите нейропродавца за 2 минуты без программистов.'
+                                },
+                                {
+                                    q: 'Как работает бесплатный тариф?',
+                                    a: 'Бесплатный тариф включает до 300 диалогов в месяц, подключение 1 канала, базовую аналитику и круглосуточную поддержку. Никаких скрытых платежей — просто регистрируетесь и начинаете работать. Карта не требуется.'
+                                },
+                                {
+                                    q: 'Можно ли обучить нейропродавца под мой бизнес?',
+                                    a: 'Да! Загружаете базу знаний (прайс, описание услуг, FAQ), прописываете инструкции — и нейропродавец изучит всё за минуты. Можете в любой момент дообучать и корректировать его поведение через простой интерфейс.'
+                                },
+                                {
+                                    q: 'Что будет, если превышу лимит в 300 диалогов?',
+                                    a: 'Нейропродавец продолжит работать, но мы предложим перейти на платный тариф. Если не перейдёте сразу — ничего страшного, просто в следующем месяце лимит обновится. Никаких блокировок или штрафов.'
+                                },
+                                {
+                                    q: 'Можно ли интегрировать с моей CRM?',
+                                    a: 'Да! На тарифе PRO доступна интеграция с популярными CRM (AmoCRM, Битрикс24 и другие). Все диалоги автоматически логируются, а тёплые лиды передаются вашим менеджерам для закрытия сделки.'
+                                },
+                                {
+                                    q: 'Нейропродавец заменит моих менеджеров?',
+                                    a: 'Нейропродавец берёт на себя рутину: первичную обработку, квалификацию, ответы на типовые вопросы и простые продажи. Сложные сделки может передавать живым менеджерам. Это как помощник, который работает 24/7 и освобождает время для важных задач.'
+                                }
+                            ].map((faq, i) => (
+                                <AccordionItem key={i} value={`item-${i}`} className="bg-white border border-slate-100 rounded-xl px-6 py-4">
+                                    <AccordionTrigger className="hover:no-underline py-0 font-semibold text-slate-900">
+                                        {faq.q}
+                                    </AccordionTrigger>
+                                    <AccordionContent className="text-slate-600 mt-4">
+                                        {faq.a}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* FINAL CTA */}
+            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                <div className="max-w-3xl mx-auto text-center">
+                    <motion.h2 
+                        {...fadeInUp}
+                        className="text-4xl font-bold mb-4"
+                    >
+                        Запустите первого нейропродавца за 2 минуты
+                    </motion.h2>
+                    <motion.p 
+                        {...fadeInUp}
+                        className="text-xl text-slate-300 mb-8"
+                    >
+                        Начните обрабатывать лиды мгновенно и увеличьте конверсию уже сегодня
+                    </motion.p>
+                    <motion.button 
+                        {...fadeInUp}
+                        className="px-8 py-4 bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-lg mb-6"
+                    >
+                        Начать бесплатно
+                    </motion.button>
+                    <motion.p 
+                        {...fadeInUp}
+                        className="text-slate-400 text-sm"
+                    >
+                        Без привязки карты • Без программистов • Без обязательств
+                    </motion.p>
+                </div>
+            </section>
+
+            {/* FOOTER */}
+            <footer className="py-8 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-100">
+                <div className="max-w-6xl mx-auto text-center text-slate-600 text-sm">
+                    © 2026 NEUROSELLER. Все права защищены.
+                </div>
+            </footer>
+        </div>
+    );
+}

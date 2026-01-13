@@ -6,6 +6,7 @@ import Channels from './pages/Channels';
 import Conversations from './pages/Conversations';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
+import Landing from './pages/Landing';
 import __Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "Conversations": Conversations,
     "Dashboard": Dashboard,
     "Settings": Settings,
+    "Landing": Landing,
 }
 
 export const pagesConfig = {
