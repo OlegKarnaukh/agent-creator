@@ -488,7 +488,7 @@ export default function Landing() {
                     </motion.p>
                     <motion.button 
                         {...fadeInUp}
-                        className="px-8 py-4 bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-lg mb-6"
+                        className="px-8 py-4 bg-white text-slate-900 rounded-lg hover:bg-slate-50 transition-all font-semibold text-lg mb-6 shadow-lg hover:shadow-xl hover:scale-105 transform"
                     >
                         Начать бесплатно
                     </motion.button>
