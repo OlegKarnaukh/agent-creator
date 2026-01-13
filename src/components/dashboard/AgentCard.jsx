@@ -87,16 +87,16 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
                         <img 
                             src={agent.avatar_url} 
                             alt={agent.name}
-                            className={`rounded-xl object-cover ${isArchived ? 'w-8 h-8' : 'w-12 h-12'}`}
+                            className={`rounded-xl object-cover ${isArchived ? 'w-6 h-6' : 'w-12 h-12'}`}
                         />
                     ) : (
-                        <div className={`rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center ${isArchived ? 'w-8 h-8' : 'w-12 h-12'}`}>
-                            <User className={`text-slate-400 ${isArchived ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                        <div className={`rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center ${isArchived ? 'w-6 h-6' : 'w-12 h-12'}`}>
+                            <User className={`text-slate-400 ${isArchived ? 'w-3 h-3' : 'w-5 h-5'}`} />
                         </div>
                     )}
                     <div>
-                        <h3 className="font-semibold text-slate-800">{agent.name}</h3>
-                        {!isArchived && <p className="text-xs text-slate-500">{agent.business_type || 'Бизнес'}</p>}
+                        <h3 className={`font-semibold ${isArchived ? 'text-xs text-slate-600' : 'text-slate-800'}`}>{agent.name}</h3>
+                        <p className={`text-xs ${isArchived ? 'text-slate-400' : 'text-slate-500'}`}>{agent.business_type || 'Бизнес'}</p>
                     </div>
                 </div>
                 {!isArchived && (
