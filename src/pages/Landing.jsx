@@ -43,7 +43,7 @@ export default function Landing() {
             {/* HEADER */}
             <header className={`fixed top-0 w-full z-50 transition-all ${isScrolled ? 'bg-white border-b border-slate-100 shadow-sm' : 'bg-transparent'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69611ae203d0641b357eee81/174650a65_1edad0dedf741d1934ae71f5efc20db7_6a91ba24-a241-4a36-97cf-8bd7fd02304011.jpg" alt="NeuroSeller" className="h-8" />
+                    <span className="text-xl font-bold text-slate-900">NeuroSeller</span>
                     <button onClick={handleStartClick} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl">
                         Запустить бесплатно
                     </button>
@@ -64,7 +64,7 @@ export default function Landing() {
                     </motion.h2>
                     <motion.p 
                         {...fadeInUp}
-                        className="text-lg text-slate-600 mb-8 leading-relaxed"
+                        className="text-base text-slate-600 mb-8 leading-relaxed"
                     >
                         Закрывает возражения, досконально знает продукт и не просит зарплату. Бесплатно навсегда для малого бизнеса.
                     </motion.p>
@@ -140,7 +140,7 @@ export default function Landing() {
                                     <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <Icon className={`w-6 h-6 ${item.color}`} />
                                     </div>
-                                    <h3 className="text-lg font-semibold text-slate-900 mb-3">{item.title}</h3>
+                                    <h3 className="text-base font-semibold text-slate-900 mb-3">{item.title}</h3>
                                     <p className="text-slate-600 mb-4 text-sm leading-relaxed">{item.desc}</p>
                                     <Badge className={item.color === 'text-red-500' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}>
                                         {item.metric}
@@ -260,7 +260,7 @@ export default function Landing() {
                                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
                                         <Icon className="w-7 h-7 text-blue-600" />
                                     </div>
-                                    <h3 className="text-lg font-semibold text-slate-900 mb-2">{step.title}</h3>
+                                    <h3 className="text-base font-semibold text-slate-900 mb-2">{step.title}</h3>
                                     <p className="text-slate-600 text-sm">{step.desc}</p>
                                 </motion.div>
                             );
