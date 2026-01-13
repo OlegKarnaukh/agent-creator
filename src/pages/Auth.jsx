@@ -207,20 +207,36 @@ export default function Auth() {
                         </Button>
                     </form>
 
-                    {/* Toggle */}
-                    <div className="mt-6 text-center">
-                        <p className="text-slate-600 text-sm">
-                            {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
+                    {emailConfirmationRequired && (
+                        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-blue-700 text-sm text-center">
+                                На почту отправлена ссылка для подтверждения. Проверьте входящие письма и подтвердите аккаунт.
+                            </p>
                             <button
                                 type="button"
                                 onClick={handleToggle}
-                                disabled={isLoading}
-                                className="text-blue-600 hover:text-blue-700 font-semibold ml-1 transition-colors"
+                                className="text-blue-600 hover:text-blue-700 font-semibold text-sm mt-3 block mx-auto"
                             >
-                                {isLogin ? 'Регистрация' : 'Войти'}
+                                Вернуться к входу
                             </button>
-                        </p>
-                    </div>
+                        </div>
+                    )}
+
+                    {!emailConfirmationRequired && (
+                        <div className="mt-6 text-center">
+                            <p className="text-slate-600 text-sm">
+                                {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
+                                <button
+                                    type="button"
+                                    onClick={handleToggle}
+                                    disabled={isLoading}
+                                    className="text-blue-600 hover:text-blue-700 font-semibold ml-1 transition-colors"
+                                >
+                                    {isLogin ? 'Регистрация' : 'Войти'}
+                                </button>
+                            </p>
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </div>
