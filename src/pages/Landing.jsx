@@ -26,8 +26,8 @@ export default function Landing() {
     }, []);
 
     const handleStartClick = () => {
-            navigate(createPageUrl('Auth'));
-        };
+        base44.auth.redirectToLogin(createPageUrl('Dashboard'));
+    };
 
     return (
         <div className="min-h-screen bg-white">

@@ -1,7 +1,6 @@
 import AgentBuilder from './pages/AgentBuilder';
 import Agents from './pages/Agents';
 import Analytics from './pages/Analytics';
-import Auth from './pages/Auth';
 import Billing from './pages/Billing';
 import Channels from './pages/Channels';
 import Conversations from './pages/Conversations';
@@ -15,7 +14,6 @@ export const PAGES = {
     "AgentBuilder": AgentBuilder,
     "Agents": Agents,
     "Analytics": Analytics,
-    "Auth": Auth,
     "Billing": Billing,
     "Channels": Channels,
     "Conversations": Conversations,
