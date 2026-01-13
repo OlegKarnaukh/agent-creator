@@ -21,24 +21,6 @@ export default function Analytics() {
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState(null);
 
-    useEffect(() => {
-        const checkAdmin = async () => {
-            try {
-                const user = await base44.auth.me();
-                if (user?.role !== 'admin') {
-                    navigate(createPageUrl('Dashboard'));
-                    return;
-                }
-                setIsAdmin(true);
-            } catch (error) {
-                navigate(createPageUrl('Dashboard'));
-            }
-        };
-        checkAdmin();
-    }, [navigate]);
-
-    if (isAdmin === null) return null;
-
     const { data: users = [] } = useQuery({
         queryKey: ['all_users'],
         queryFn: () => base44.entities.User.list(),
@@ -58,6 +40,24 @@ export default function Analytics() {
         queryKey: ['all_billings'],
         queryFn: () => base44.entities.Billing.list(),
     });
+
+    useEffect(() => {
+        const checkAdmin = async () => {
+            try {
+                const user = await base44.auth.me();
+                if (user?.role !== 'admin') {
+                    navigate(createPageUrl('Dashboard'));
+                    return;
+                }
+                setIsAdmin(true);
+            } catch (error) {
+                navigate(createPageUrl('Dashboard'));
+            }
+        };
+        checkAdmin();
+    }, [navigate]);
+
+    if (isAdmin === null) return null;
 
     // Финансовая статистика
     const revenue = billings.reduce((sum, b) => sum + (PLAN_PRICES[b.plan] || 0), 0);
