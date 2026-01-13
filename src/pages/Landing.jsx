@@ -228,22 +228,25 @@ export default function Landing() {
 
                     <div className="grid md:grid-cols-3 gap-8 mt-12">
                         {[
-                            { num: '1', title: 'Настройте поведение', desc: 'Опишите, что продаёте и как общаться с клиентами' },
-                            { num: '2', title: 'Подключите каналы', desc: 'Telegram, WhatsApp, Авито, виджет на сайт' },
-                            { num: '3', title: 'Загрузите базу знаний', desc: 'Прикрепите прайс, FAQ, каталог' }
-                        ].map((step, i) => (
-                            <motion.div 
-                                key={i}
-                                {...fadeInUp}
-                                className="bg-white rounded-2xl border border-slate-100 p-8 text-center"
-                            >
-                                <div className="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center text-xl font-bold mx-auto mb-4">
-                                    {step.num}
-                                </div>
-                                <h3 className="text-lg font-semibold text-slate-900 mb-2">{step.title}</h3>
-                                <p className="text-slate-600 text-sm">{step.desc}</p>
-                            </motion.div>
-                        ))}
+                            { icon: Settings, title: 'Настройте поведение', desc: 'Опишите, что продаёте и как общаться с клиентами' },
+                            { icon: Plug, title: 'Подключите каналы', desc: 'Telegram, WhatsApp, Авито, виджет на сайт' },
+                            { icon: BookOpen, title: 'Загрузите базу знаний', desc: 'Прикрепите прайс, FAQ, каталог' }
+                        ].map((step, i) => {
+                            const Icon = step.icon;
+                            return (
+                                <motion.div 
+                                    key={i}
+                                    {...fadeInUp}
+                                    className="bg-white rounded-2xl border border-slate-100 p-8 text-center"
+                                >
+                                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
+                                        <Icon className="w-7 h-7 text-blue-600" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-slate-900 mb-2">{step.title}</h3>
+                                    <p className="text-slate-600 text-sm">{step.desc}</p>
+                                </motion.div>
+                            );
+                        })}
                     </div>
 
                     <motion.div 
