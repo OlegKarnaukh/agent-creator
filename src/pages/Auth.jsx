@@ -56,22 +56,9 @@ export default function Auth() {
         setLoading(true);
 
         try {
-            await base44.auth.signUp(email, password, fullName);
-            await base44.auth.signIn(email, password);
-            
-            // Синхронизируем пользователя с Railway
-            try {
-                await base44.functions.invoke('syncUserWithRailway');
-            } catch (syncError) {
-                console.error('Railway sync error:', syncError);
-                toast.error('Ошибка синхронизации');
-            }
-            
-            // Новый пользователь → сразу на AgentBuilder (без демо-данных)
-            navigate(createPageUrl('AgentBuilder'));
+            await base44.auth.redirectToLogin(createPageUrl('AgentBuilder'));
         } catch (err) {
             setError(err.message || 'Ошибка регистрации. Попробуйте ещё раз');
-        } finally {
             setLoading(false);
         }
     };
