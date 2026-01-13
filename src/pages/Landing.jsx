@@ -174,13 +174,13 @@ export default function Landing() {
             </section>
 
             {/* COMPARISON TABLE */}
-            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <motion.h2 
                         {...fadeInUp}
-                        className="text-4xl font-bold text-slate-900 text-center mb-12"
+                        className="text-3xl sm:text-4xl font-bold text-slate-900 text-center mb-12"
                     >
-                        Нейропродавец vs Менеджер
+                        <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Нейропродавец</span> vs Менеджер
                     </motion.h2>
 
                     <motion.div 
