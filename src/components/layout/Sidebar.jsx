@@ -29,6 +29,13 @@ export default function Sidebar({ user }) {
         return currentPath === createPageUrl(page) || currentPath === `/${page}`;
     };
 
+    const filteredNavigation = navigation.filter(item => {
+        if (item.page === 'Analytics' && user?.role !== 'admin') {
+            return false;
+        }
+        return true;
+    });
+
     return (
         <div className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen overflow-hidden">
             <div className="p-6 border-b border-slate-200 shrink-0">
@@ -37,7 +44,7 @@ export default function Sidebar({ user }) {
             </div>
 
             <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-                {navigation.map((item) => {
+                {filteredNavigation.map((item) => {
                     const active = isActive(item.page);
                     return (
                         <Link
