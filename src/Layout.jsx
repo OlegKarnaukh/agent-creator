@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
+import { createPageUrl } from '@/utils';
 
 // Страницы без sidebar
 const pagesWithoutSidebar = ['AgentBuilder', 'Landing'];
@@ -9,7 +11,14 @@ const pagesWithoutSidebar = ['AgentBuilder', 'Landing'];
 export default function Layout({ children, currentPageName }) {
     const [user, setUser] = useState(null);
     const location = useLocation();
+    const navigate = useNavigate();
     const showSidebar = !pagesWithoutSidebar.includes(currentPageName);
+
+    const { data: agents = [] } = useQuery({
+        queryKey: ['agents'],
+        queryFn: () => base44.entities.Agent.list(),
+        enabled: !!user,
+    });
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -18,10 +27,24 @@ export default function Layout({ children, currentPageName }) {
                 setUser(userData);
             } catch (error) {
                 console.error('Error fetching user:', error);
+                setUser(null);
             }
         };
         fetchUser();
     }, []);
+
+    useEffect(() => {
+        if (!user) return;
+
+        // Если пользователь на Landing и авторизован, редирект на Dashboard или AgentBuilder
+        if (currentPageName === 'Landing' && user) {
+            if (agents.length > 0) {
+                navigate(createPageUrl('Dashboard'));
+            } else {
+                navigate(createPageUrl('AgentBuilder'));
+            }
+        }
+    }, [user, agents, currentPageName, navigate]);
 
     return (
         <div className="h-screen bg-slate-50">
