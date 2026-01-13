@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -13,6 +15,7 @@ const fadeInUp = {
 };
 
 export default function Landing() {
+    const navigate = useNavigate();
     const [isScrolled, setIsScrolled] = useState(false);
 
     React.useEffect(() => {
@@ -21,13 +24,22 @@ export default function Landing() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const handleStartClick = async () => {
+        const isAuthenticated = await base44.auth.isAuthenticated();
+        if (isAuthenticated) {
+            navigate('/agents');
+        } else {
+            await base44.auth.redirectToLogin();
+        }
+    };
+
     return (
         <div className="min-h-screen bg-white">
             {/* HEADER */}
             <header className={`fixed top-0 w-full z-50 transition-all ${isScrolled ? 'bg-white border-b border-slate-100 shadow-sm' : 'bg-transparent'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <h1 className={`text-2xl font-bold transition-colors ${isScrolled ? 'text-slate-900' : 'text-white'}`}>NeuroSeller</h1>
-                    <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl">
+                    <button onClick={handleStartClick} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl">
                         Запустить бесплатно
                     </button>
                 </div>
@@ -53,6 +65,7 @@ export default function Landing() {
                     </motion.p>
                     <motion.button 
                         {...fadeInUp}
+                        onClick={handleStartClick}
                         className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-lg mb-12 shadow-lg hover:shadow-2xl hover:scale-105 transform"
                     >
                         Запустить бесплатно за 2 минуты
@@ -253,7 +266,7 @@ export default function Landing() {
                         {...fadeInUp}
                         className="text-center mt-12"
                     >
-                        <button className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold shadow-lg hover:shadow-xl hover:scale-105 transform">
+                        <button onClick={handleStartClick} className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold shadow-lg hover:shadow-xl hover:scale-105 transform">
                             Попробовать бесплатно
                         </button>
                     </motion.div>
@@ -498,6 +511,7 @@ export default function Landing() {
                     </motion.p>
                     <motion.button 
                         {...fadeInUp}
+                        onClick={handleStartClick}
                         className="px-8 py-4 bg-white text-slate-900 rounded-lg hover:bg-slate-50 transition-all font-semibold text-lg mb-6 shadow-lg hover:shadow-xl hover:scale-105 transform"
                     >
                         Начать бесплатно
