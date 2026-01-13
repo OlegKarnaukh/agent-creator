@@ -57,6 +57,8 @@ export default function Auth() {
                     email: formData.email,
                     password: formData.password
                 });
+                const currentUser = await base44.auth.me();
+                await syncUser(currentUser);
                 toast.success('Успешный вход!');
                 navigate(createPageUrl('Dashboard'));
             } else {
@@ -65,6 +67,8 @@ export default function Auth() {
                     password: formData.password,
                     full_name: formData.full_name
                 });
+                const currentUser = await base44.auth.me();
+                await syncUser(currentUser);
                 toast.success('Аккаунт создан!');
                 navigate(createPageUrl('AgentBuilder'));
             }
