@@ -34,27 +34,26 @@ export default function Landing() {
             </header>
 
             {/* HERO */}
-            <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 pointer-events-none" />
-                <div className="absolute top-20 right-10 w-72 h-72 bg-blue-500/5 rounded-full blur-3xl" />
-                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl" />
+            <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-white via-slate-50 to-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100/40 to-purple-100/40 rounded-full blur-3xl -z-10" />
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl -z-10" />
                 
                 <div className="max-w-4xl mx-auto text-center relative z-10">
                     <motion.h2 
                         {...fadeInUp}
-                        className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight"
+                        className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight tracking-tight"
                     >
-                        Нейропродавец, который работает <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">24/7</span>, отвечает мгновенно и доводит до оплаты
+                        Нейропродавец, который работает <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">24/7</span>, отвечает мгновенно и доводит до оплаты
                     </motion.h2>
                     <motion.p 
                         {...fadeInUp}
-                        className="text-lg text-slate-300 mb-8 leading-relaxed"
+                        className="text-lg text-slate-600 mb-8 leading-relaxed"
                     >
                         Закрывает возражения, досконально знает продукт и не просит зарплату. Бесплатно навсегда для малого бизнеса.
                     </motion.p>
                     <motion.button 
                         {...fadeInUp}
-                        className="px-8 py-4 bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-lg mb-12 shadow-lg"
+                        className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-lg mb-12 shadow-lg hover:shadow-2xl hover:scale-105 transform"
                     >
                         Запустить бесплатно за 2 минуты
                     </motion.button>
@@ -65,14 +64,14 @@ export default function Landing() {
                         className="grid grid-cols-2 md:grid-cols-4 gap-4"
                     >
                         {[
-                            { label: 'Ответ клиенту', value: '3 сек', color: 'from-blue-500' },
-                            { label: 'Работает', value: '24/7', color: 'from-purple-500' },
-                            { label: 'Диалогов бесплатно', value: '300', color: 'from-emerald-500' },
-                            { label: 'До запуска', value: '2 мин', color: 'from-orange-500' }
+                            { label: 'Ответ клиенту', value: '3 сек' },
+                            { label: 'Работает', value: '24/7' },
+                            { label: 'Диалогов бесплатно', value: '300' },
+                            { label: 'До запуска', value: '2 мин' }
                         ].map((stat, i) => (
-                            <div key={i} className={`bg-gradient-to-br ${stat.color} to-slate-700 rounded-xl p-4 shadow-lg hover:shadow-xl transition-shadow border border-white/10`}>
-                                <p className="text-slate-200 text-xs sm:text-sm mb-2">{stat.label}</p>
-                                <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
+                            <div key={i} className="bg-white rounded-xl p-4 shadow-md border border-slate-100 hover:shadow-lg transition-shadow">
+                                <p className="text-slate-600 text-xs sm:text-sm mb-2">{stat.label}</p>
+                                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{stat.value}</p>
                             </div>
                         ))}
                     </motion.div>
