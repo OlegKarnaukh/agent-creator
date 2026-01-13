@@ -239,18 +239,43 @@ export default function Auth() {
                     </form>
 
                     {emailConfirmationRequired && (
-                        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p className="text-blue-700 text-sm text-center">
-                                На почту отправлена ссылка для подтверждения. Проверьте входящие письма и подтвердите аккаунт.
-                            </p>
+                        <form onSubmit={handleVerifyEmail} className="mt-6 space-y-4">
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p className="text-blue-700 text-sm text-center font-medium">
+                                    Введите код из письма
+                                </p>
+                            </div>
+                            <Input
+                                type="text"
+                                value={verificationCode}
+                                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                placeholder="000000"
+                                maxLength="6"
+                                className="bg-slate-50 border-slate-200 text-center tracking-widest text-lg font-semibold"
+                                disabled={isVerifying}
+                            />
+                            <Button
+                                type="submit"
+                                disabled={isVerifying || verificationCode.length !== 6}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg"
+                            >
+                                {isVerifying ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
+                                        Подтверждение...
+                                    </>
+                                ) : (
+                                    'Подтвердить'
+                                )}
+                            </Button>
                             <button
                                 type="button"
                                 onClick={handleToggle}
-                                className="text-blue-600 hover:text-blue-700 font-semibold text-sm mt-3 block mx-auto"
+                                className="text-blue-600 hover:text-blue-700 font-semibold text-sm block mx-auto mt-3"
                             >
                                 Вернуться к входу
                             </button>
-                        </div>
+                        </form>
                     )}
 
                     {!emailConfirmationRequired && (
