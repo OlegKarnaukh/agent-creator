@@ -25,8 +25,8 @@ export default function Landing() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const handleStartClick = async () => {
-        await base44.auth.redirectToSignUp(createPageUrl('AgentBuilder'));
+    const handleStartClick = () => {
+        base44.auth.redirectToSignUp(createPageUrl('AgentBuilder'));
     };
 
     return (
