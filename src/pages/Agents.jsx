@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Archive } from "lucide-react";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import AgentCard from '@/components/dashboard/AgentCard';
@@ -15,6 +15,9 @@ export default function Agents() {
         queryKey: ['agents'],
         queryFn: () => base44.entities.Agent.list('-created_date'),
     });
+
+    const activeAgents = agents.filter(a => a.status !== 'archived');
+    const archivedAgents = agents.filter(a => a.status === 'archived');
 
     if (isLoading) {
         return (
@@ -41,7 +44,7 @@ export default function Agents() {
                     </Button>
                 </div>
 
-                {agents.length === 0 ? (
+                {activeAgents.length === 0 && archivedAgents.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -63,15 +66,42 @@ export default function Agents() {
                         </Button>
                     </motion.div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {agents.map((agent) => (
-                            <AgentCard
-                                key={agent.id}
-                                agent={agent}
-                                onClick={() => navigate(`${createPageUrl('Channels')}?agentId=${agent.id}`)}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        {activeAgents.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+                                {activeAgents.map((agent) => (
+                                    <AgentCard
+                                        key={agent.id}
+                                        agent={agent}
+                                        onClick={() => navigate(`${createPageUrl('Channels')}?agentId=${agent.id}`)}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {archivedAgents.length > 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mt-12"
+                            >
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Archive className="w-5 h-5 text-slate-500" />
+                                    <h2 className="text-lg font-semibold text-slate-700">Архив ({archivedAgents.length})</h2>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 opacity-75">
+                                    {archivedAgents.map((agent) => (
+                                        <AgentCard
+                                            key={agent.id}
+                                            agent={agent}
+                                            onClick={() => navigate(`${createPageUrl('Channels')}?agentId=${agent.id}`)}
+                                            isArchived={true}
+                                        />
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

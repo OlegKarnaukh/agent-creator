@@ -1,18 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, MessageSquare, TrendingUp, User, Send, Phone, Globe } from 'lucide-react';
+import { MoreHorizontal, MessageSquare, TrendingUp, User, Send, Phone, Globe, Archive, RotateCcw } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQuery } from '@tanstack/react-query';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
-export default function AgentCard({ agent, onClick, isSelected }) {
+export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
+    const [showDialog, setShowDialog] = useState(false);
+    const queryClient = useQueryClient();
+
+    const archiveMutation = useMutation({
+        mutationFn: () => base44.entities.Agent.update(agent.id, { status: 'archived' }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] });
+            toast.success('Агент архивирован');
+        },
+    });
+
+    const restoreMutation = useMutation({
+        mutationFn: () => base44.entities.Agent.update(agent.id, { status: agent.status === 'archived' ? 'active' : agent.status }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] });
+            toast.success('Агент восстановлен');
+        },
+    });
     const statusColors = {
         draft: 'bg-slate-100 text-slate-600',
         active: 'bg-emerald-100 text-emerald-700',
@@ -82,7 +110,17 @@ export default function AgentCard({ agent, onClick, isSelected }) {
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem>Редактировать</DropdownMenuItem>
                         <DropdownMenuItem>Дублировать</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">Удалить</DropdownMenuItem>
+                        {isArchived ? (
+                            <DropdownMenuItem onClick={() => restoreMutation.mutate()}>
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                Восстановить
+                            </DropdownMenuItem>
+                        ) : (
+                            <DropdownMenuItem onClick={() => setShowDialog(true)} className="text-amber-600">
+                                <Archive className="w-4 h-4 mr-2" />
+                                Архивировать
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
@@ -127,6 +165,29 @@ export default function AgentCard({ agent, onClick, isSelected }) {
                     <span>{agent.stats?.conversion_rate || 0}%</span>
                 </div>
             </div>
+
+            <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Архивировать агента?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Агент «{agent.name}» будет перемещён в архив. Вы сможете восстановить его позже.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="flex gap-3">
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={() => {
+                                archiveMutation.mutate();
+                                setShowDialog(false);
+                            }}
+                            className="bg-amber-600 hover:bg-amber-700"
+                        >
+                            Архивировать
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </motion.div>
     );
 }
