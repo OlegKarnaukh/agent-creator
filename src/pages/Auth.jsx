@@ -56,18 +56,8 @@ export default function Auth() {
         setLoading(true);
 
         try {
-            // Регистрируем пользователя через backend функцию
-            const response = await base44.functions.invoke('registerUser', {
-                email,
-                password,
-                fullName
-            });
-
-            if (!response.data.success) {
-                setError(response.data.error || 'Ошибка регистрации');
-                setLoading(false);
-                return;
-            }
+            // Используем встроенный механизм Base44 для регистрации
+            await base44.auth.signUp(email, password, fullName);
 
             // Автоматически входим после регистрации
             await base44.auth.signIn(email, password);
@@ -82,7 +72,7 @@ export default function Auth() {
             // Переходим на AgentBuilder
             navigate(createPageUrl('AgentBuilder'));
         } catch (err) {
-            setError(err.response?.data?.error || err.message || 'Ошибка регистрации. Попробуйте ещё раз');
+            setError(err.message || 'Ошибка регистрации. Попробуйте ещё раз');
         } finally {
             setLoading(false);
         }
