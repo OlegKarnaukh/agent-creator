@@ -321,18 +321,20 @@ export default function Landing() {
                         className="grid grid-cols-3 md:grid-cols-5 gap-6"
                     >
                         {[
-                            { icon: Send, label: 'Telegram' },
-                            { icon: MessageSquare, label: 'WhatsApp' },
-                            { icon: Home, label: 'Авито' },
-                            { icon: Globe, label: 'Виджет' },
-                            { icon: Phone, label: 'Instagram' },
-                            { icon: Users, label: 'ВКонтакте' },
+                            { icon: Send, label: 'Telegram', color: 'bg-blue-500' },
+                            { icon: MessageSquare, label: 'WhatsApp', color: 'bg-green-500' },
+                            { icon: Home, label: 'Авито', color: 'bg-red-500' },
+                            { icon: Globe, label: 'Виджет', color: 'bg-purple-500' },
+                            { icon: Phone, label: 'Instagram', color: 'bg-pink-500' },
+                            { icon: Users, label: 'ВКонтакте', color: 'bg-blue-600' },
                         ].map((item, i) => {
                             const Icon = item.icon;
                             return (
-                                <div key={i} className="bg-white rounded-xl border border-slate-100 p-4 flex flex-col items-center gap-2">
-                                    <Icon className="w-8 h-8 text-slate-600" />
-                                    <span className="text-xs text-slate-600 text-center">{item.label}</span>
+                                <div key={i} className="bg-white rounded-xl border border-slate-100 p-4 flex flex-col items-center gap-3 hover:shadow-lg hover:border-slate-200 transition-all">
+                                    <div className={`${item.color} rounded-lg p-3 text-white`}>
+                                        <Icon className="w-6 h-6" />
+                                    </div>
+                                    <span className="text-xs font-medium text-slate-700 text-center">{item.label}</span>
                                 </div>
                             );
                         })}
