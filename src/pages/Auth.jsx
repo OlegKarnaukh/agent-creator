@@ -11,6 +11,12 @@ import { toast } from 'sonner';
 export default function Auth() {
     const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
+
+    // Логируем доступные методы Auth SDK
+    React.useEffect(() => {
+        console.log('Доступные методы base44.auth:', Object.keys(base44.auth));
+        console.log('Полный объект base44.auth:', base44.auth);
+    }, []);
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
