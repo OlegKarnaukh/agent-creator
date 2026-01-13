@@ -68,17 +68,19 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
     });
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ y: -2 }}
-            onClick={onClick}
-            className={`bg-white rounded-2xl p-5 border cursor-pointer transition-all ${
-                isSelected 
-                    ? 'border-slate-900 shadow-lg shadow-slate-200/50' 
-                    : 'border-slate-100 hover:border-slate-200 hover:shadow-md'
-            }`}
-        >
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ y: -2 }}
+                    onClick={onClick}
+                    className={`bg-white rounded-2xl border cursor-pointer transition-all ${
+                        isArchived 
+                            ? 'p-3 border-slate-100 hover:border-slate-200'
+                            : `p-5 ${isSelected 
+                            ? 'border-slate-900 shadow-lg shadow-slate-200/50' 
+                            : 'border-slate-100 hover:border-slate-200 hover:shadow-md'}`
+                    }`}
+                >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                     {agent.avatar_url ? (
