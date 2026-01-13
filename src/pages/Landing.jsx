@@ -26,8 +26,8 @@ export default function Landing() {
             {/* HEADER */}
             <header className={`fixed top-0 w-full z-50 transition-all ${isScrolled ? 'bg-white border-b border-slate-100 shadow-sm' : 'bg-transparent'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-slate-900">NeuroSeller</h1>
-                    <button className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium text-sm">
+                    <h1 className={`text-2xl font-bold transition-colors ${isScrolled ? 'text-slate-900' : 'text-white'}`}>NeuroSeller</h1>
+                    <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl">
                         Запустить бесплатно
                     </button>
                 </div>
