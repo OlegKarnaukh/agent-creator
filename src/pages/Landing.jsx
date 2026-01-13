@@ -31,10 +31,10 @@ export default function Landing() {
             if (isAuthenticated) {
                 navigate(createPageUrl('Dashboard'));
             } else {
-                navigate(createPageUrl('Auth') + '?mode=signup');
+                await base44.auth.redirectToSignUp(createPageUrl('AgentBuilder'));
             }
         } catch (error) {
-            navigate(createPageUrl('Auth') + '?mode=signup');
+            await base44.auth.redirectToSignUp(createPageUrl('AgentBuilder'));
         }
     };
 
