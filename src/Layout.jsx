@@ -20,62 +20,6 @@ export default function Layout({ children, currentPageName }) {
         enabled: !!user,
     });
 
-    // Перевод страницы авторизации на русский
-    useEffect(() => {
-        const translations = {
-            "Welcome to NeuroSeller": "Добро пожаловать",
-            "Sign in to continue": "Войдите чтобы продолжить",
-            "Sign in": "Войти",
-            "Sign up": "Регистрация",
-            "Email": "Эл. почта",
-            "Password": "Пароль",
-            "Forgot password?": "Забыли пароль?",
-            "Need an account?": "Нет аккаунта?",
-            "Already have an account?": "Уже есть аккаунт?",
-            "Create account": "Создать аккаунт",
-            "Full Name": "Имя",
-            "you@example.com": "ваш@email.com"
-        };
-
-        const translateElement = (element) => {
-            // Переводим textContent
-            if (element.nodeType === Node.TEXT_NODE) {
-                for (const [en, ru] of Object.entries(translations)) {
-                    if (element.textContent.includes(en)) {
-                        element.textContent = element.textContent.replace(en, ru);
-                    }
-                }
-            }
-
-            // Переводим placeholder
-            if (element.placeholder) {
-                for (const [en, ru] of Object.entries(translations)) {
-                    if (element.placeholder.includes(en)) {
-                        element.placeholder = element.placeholder.replace(en, ru);
-                    }
-                }
-            }
-
-            // Рекурсивно обрабатываем дочерние элементы
-            Array.from(element.childNodes).forEach(translateElement);
-        };
-
-        const observer = new MutationObserver(() => {
-            translateElement(document.body);
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            characterData: true
-        });
-
-        // Первый проход
-        translateElement(document.body);
-
-        return () => observer.disconnect();
-    }, []);
-
     useEffect(() => {
         const fetchUser = async () => {
             try {
