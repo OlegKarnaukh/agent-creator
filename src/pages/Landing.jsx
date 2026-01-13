@@ -34,13 +34,17 @@ export default function Landing() {
             </header>
 
             {/* HERO */}
-            <section className="pt-32 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-slate-100">
-                <div className="max-w-4xl mx-auto text-center">
+            <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 pointer-events-none" />
+                <div className="absolute top-20 right-10 w-72 h-72 bg-blue-500/5 rounded-full blur-3xl" />
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl" />
+                
+                <div className="max-w-4xl mx-auto text-center relative z-10">
                     <motion.h2 
                         {...fadeInUp}
-                        className="text-5xl sm:text-6xl font-bold text-slate-900 mb-6 leading-tight"
+                        className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight"
                     >
-                        Нейропродавец, который работает 24/7, отвечает мгновенно, выявляет потребности и доводит до оплаты
+                        Нейропродавец, который работает <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">24/7</span>, отвечает мгновенно и доводит до оплаты
                     </motion.h2>
                     <motion.p 
                         {...fadeInUp}
