@@ -91,12 +91,8 @@ export default function ChannelSettings({ agent }) {
 
     return (
         <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-semibold text-slate-800">Каналы связи</h3>
-                <Button variant="ghost" size="sm" className="text-slate-500">
-                    <Settings className="w-4 h-4 mr-1" />
-                    Настройки
-                </Button>
+            <div className="p-4 border-b border-slate-100">
+                <h3 className="font-semibold text-slate-800">Доступные каналы</h3>
             </div>
             <div className="p-4 space-y-3">
                 {channels.map((channel, idx) => {
