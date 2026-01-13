@@ -33,19 +33,7 @@ export default function Layout({ children, currentPageName }) {
         fetchUser();
     }, []);
 
-    useEffect(() => {
-        // Редирект только если пользователь авторизован И у него уже загрузились агенты
-        if (!user || agents.length === undefined) return;
 
-        // Если пользователь на Landing и авторизован, редирект на Dashboard или AgentBuilder
-        if (currentPageName === 'Landing') {
-            if (agents.length > 0) {
-                navigate(createPageUrl('Dashboard'));
-            } else {
-                navigate(createPageUrl('AgentBuilder'));
-            }
-        }
-    }, [user, agents, currentPageName, navigate]);
 
     return (
         <div className="h-screen bg-slate-50">
