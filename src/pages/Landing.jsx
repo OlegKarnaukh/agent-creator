@@ -425,7 +425,9 @@ export default function Landing() {
                                     ))}
                                 </ul>
 
-                                <button className={`w-full py-3 rounded-lg font-semibold transition-all transform hover:scale-105 ${
+                                <button 
+                                    onClick={handleStartClick}
+                                    className={`w-full py-3 rounded-lg font-semibold transition-all transform hover:scale-105 ${
                                     plan.featured 
                                         ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg' 
                                         : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
