@@ -56,9 +56,28 @@ export default function Auth() {
         setLoading(true);
 
         try {
-            await base44.auth.redirectToLogin(createPageUrl('AgentBuilder'));
+            // Регистрируем пользователя
+            const response = await base44.functions.invoke('registerUser', {
+                email,
+                password,
+                fullName
+            });
+
+            // Автоматически входим после регистрации
+            await base44.auth.signIn(email, password);
+
+            // Синхронизируем пользователя с Railway
+            try {
+                await base44.functions.invoke('syncUserWithRailway');
+            } catch (syncError) {
+                console.error('Railway sync error:', syncError);
+            }
+
+            // Переходим на AgentBuilder
+            navigate(createPageUrl('AgentBuilder'));
         } catch (err) {
             setError(err.message || 'Ошибка регистрации. Попробуйте ещё раз');
+        } finally {
             setLoading(false);
         }
     };
