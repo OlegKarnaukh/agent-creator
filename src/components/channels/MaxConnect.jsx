@@ -156,6 +156,26 @@ export default function MaxConnect({ agentId, onSuccess }) {
                     </>
                 )}
             </Button>
+
+            <AlertDialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Требуется верификация</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Требуется верифицированная компания на business.max.ru для подключения бота.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="flex gap-3">
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleConnectConfirm}
+                            className="bg-slate-900 hover:bg-slate-800"
+                        >
+                            Продолжить
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
