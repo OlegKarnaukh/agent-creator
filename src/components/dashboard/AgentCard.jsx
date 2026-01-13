@@ -2,13 +2,15 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, MessageSquare, TrendingUp, User } from 'lucide-react';
+import { MoreHorizontal, MessageSquare, TrendingUp, User, Send, Phone, Globe } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 export default function AgentCard({ agent, onClick, isSelected }) {
     const statusColors = {
@@ -22,6 +24,19 @@ export default function AgentCard({ agent, onClick, isSelected }) {
         active: 'Активен',
         paused: 'На паузе',
     };
+
+    const channelIcons = {
+        telegram: { icon: Send, color: 'text-blue-500' },
+        whatsapp: { icon: MessageSquare, color: 'text-green-500' },
+        phone: { icon: Phone, color: 'text-purple-500' },
+        website: { icon: Globe, color: 'text-orange-500' },
+    };
+
+    const { data: connectedChannels = [] } = useQuery({
+        queryKey: ['agent-channels', agent.id],
+        queryFn: () => base44.entities.Channel.filter({ agent_id: agent.id, status: 'active' }),
+        enabled: !!agent.id,
+    });
 
     return (
         <motion.div
@@ -72,14 +87,33 @@ export default function AgentCard({ agent, onClick, isSelected }) {
                 </DropdownMenu>
             </div>
 
-            <div className="flex items-center gap-2 mb-4">
-                <Badge className={statusColors[agent.status || 'draft']}>
-                    {statusLabels[agent.status || 'draft']}
-                </Badge>
-                {agent.channels?.length > 0 && (
-                    <Badge variant="outline" className="text-slate-500">
-                        {agent.channels.filter(c => c.enabled).length} каналов
+            <div className="space-y-3 mb-4">
+                <div className="flex items-center gap-2">
+                    <Badge className={statusColors[agent.status || 'draft']}>
+                        {statusLabels[agent.status || 'draft']}
                     </Badge>
+                </div>
+
+                {connectedChannels.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {connectedChannels.map((channel) => {
+                            const ChannelIcon = channelIcons[channel.type]?.icon || MessageSquare;
+                            const iconColor = channelIcons[channel.type]?.color || 'text-slate-500';
+                            return (
+                                <div 
+                                    key={channel.id}
+                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200"
+                                >
+                                    <ChannelIcon className={`w-3.5 h-3.5 ${iconColor}`} />
+                                    <span className="text-xs text-slate-600 capitalize">{channel.type}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {connectedChannels.length === 0 && (
+                    <div className="text-xs text-slate-400">Нет подключённых каналов</div>
                 )}
             </div>
 
