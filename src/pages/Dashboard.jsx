@@ -135,52 +135,36 @@ export default function Dashboard() {
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4 }}
-                                className="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-shadow cursor-pointer"
-                                onClick={() => navigate(createPageUrl('Agents'))}
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-slate-900">Агенты</h3>
-                                    <Bot className="w-5 h-5 text-blue-500" />
-                                </div>
-                                <p className="text-3xl font-bold text-slate-900 mb-2">{totalStats.totalAgents}</p>
-                                <p className="text-sm text-slate-500">{totalStats.activeAgents} активных агентов</p>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5 }}
-                                className="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-shadow cursor-pointer"
-                                onClick={() => navigate(createPageUrl('Conversations'))}
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-slate-900">Диалоги</h3>
-                                    <MessageSquare className="w-5 h-5 text-purple-500" />
-                                </div>
-                                <p className="text-3xl font-bold text-slate-900 mb-2">{totalStats.totalConversations}</p>
-                                <p className="text-sm text-slate-500">{totalStats.activeConversations} активных диалогов</p>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.6 }}
-                                className="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-shadow cursor-pointer"
-                                onClick={() => navigate(createPageUrl('Channels'))}
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-slate-900">Каналы</h3>
-                                    <Zap className="w-5 h-5 text-orange-500" />
-                                </div>
-                                <p className="text-3xl font-bold text-slate-900 mb-2">{totalStats.totalChannels}</p>
-                                <p className="text-sm text-slate-500">Подключённых каналов</p>
-                            </motion.div>
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="bg-white rounded-2xl p-6 border border-slate-200"
+                        >
+                            <h3 className="text-lg font-semibold text-slate-900 mb-6">Диалоги по месяцам</h3>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={monthlyConversations}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                    <XAxis dataKey="month" stroke="#64748b" />
+                                    <YAxis stroke="#64748b" />
+                                    <Tooltip 
+                                        contentStyle={{ 
+                                            backgroundColor: '#1e293b', 
+                                            border: 'none', 
+                                            borderRadius: '8px',
+                                            color: '#fff'
+                                        }}
+                                    />
+                                    <Line 
+                                        type="monotone" 
+                                        dataKey="conversations" 
+                                        stroke="#7c3aed" 
+                                        dot={{ fill: '#7c3aed', r: 4 }}
+                                        strokeWidth={2}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </motion.div>
                     </div>
                 )}
             </div>
