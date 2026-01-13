@@ -11,47 +11,49 @@ Deno.serve(async (req) => {
             );
         }
 
-        const base44 = createClientFromRequest(req);
-
-        // Проверяем есть ли уже такой юзер
-        const existingUsers = await base44.asServiceRole.entities.User.list();
-        const userExists = existingUsers.some(u => u.email === email);
+        // Используем встроенный API Base44 для регистрации напрямую
+        // Это обходит встроенную страницу регистрации
+        const BASE44_APP_ID = Deno.env.get('BASE44_APP_ID');
         
-        if (userExists) {
+        const signUpResponse = await fetch('https://api.base44.com/auth/sign-up', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-App-ID': BASE44_APP_ID,
+            },
+            body: JSON.stringify({
+                email,
+                password,
+                full_name: fullName
+            })
+        });
+
+        if (!signUpResponse.ok) {
+            const error = await signUpResponse.json();
+            
+            if (signUpResponse.status === 409) {
+                return Response.json(
+                    { error: 'Этот email уже зарегистрирован' },
+                    { status: 409 }
+                );
+            }
+            
             return Response.json(
-                { error: 'Этот email уже зарегистрирован' },
-                { status: 409 }
+                { error: error.message || 'Ошибка регистрации' },
+                { status: signUpResponse.status }
             );
         }
 
-        // Создаем нового пользователя в системе
-        // Используем сервис-роль для создания юзера без авторизации
-        const newUser = await base44.asServiceRole.entities.User.create({
-            email,
-            full_name: fullName,
-            // Пароль хранится отдельно в системе аутентификации
-        });
-
-        // Регистрируем пароль в системе аутентификации
-        // Это отдельный шаг, поскольку пароли управляются отдельно
-        await base44.asServiceRole.auth.setUserPassword(newUser.id, password);
+        const user = await signUpResponse.json();
 
         return Response.json({ 
             success: true, 
-            user: { id: newUser.id, email: newUser.email }
+            user: { id: user.id, email: user.email }
         });
     } catch (error) {
         console.error('Registration error:', error.message);
-        
-        if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
-            return Response.json(
-                { error: 'Этот email уже зарегистрирован' },
-                { status: 409 }
-            );
-        }
-        
         return Response.json(
-            { error: error.message || 'Ошибка регистрации' },
+            { error: 'Ошибка регистрации. Попробуйте ещё раз' },
             { status: 500 }
         );
     }
