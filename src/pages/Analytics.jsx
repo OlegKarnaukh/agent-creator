@@ -133,9 +133,7 @@ export default function Analytics() {
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    {/* График роста пользователей и дохода */}
-                    <motion.div
+                <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
@@ -248,48 +246,40 @@ export default function Analytics() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Топ пользователей по токенам */}
+                    {/* Распределение по тарифам */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
+                        transition={{ delay: 0.5 }}
                         className="bg-white rounded-2xl p-6 border border-slate-200"
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-slate-900">Топ по использованию</h3>
-                            <Zap className="w-5 h-5 text-orange-500" />
-                        </div>
-                        <div className="space-y-3">
-                            {topUsers.map((user, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                                            {idx + 1}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium text-slate-900">
-                                                User {user.user_id.slice(0, 8)}...
-                                            </p>
-                                            <p className="text-xs text-slate-500 capitalize">{user.plan}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-semibold text-slate-900">
-                                            {user.tokens.toLocaleString()}
-                                        </p>
-                                        <p className="text-xs text-slate-500">токенов</p>
-                                    </div>
-                                </div>
-                            ))}
-
-                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Распределение по тарифам</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={planDistribution}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                    outerRadius={100}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                >
+                                    {planDistribution.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
                     </motion.div>
 
                     {/* Средние показатели */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.7 }}
+                        transition={{ delay: 0.6 }}
                         className="bg-white rounded-2xl p-6 border border-slate-200"
                     >
                         <div className="flex items-center justify-between mb-4">
