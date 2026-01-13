@@ -31,6 +31,7 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agents'] });
             toast.success('Агент архивирован');
+            setShowDialog(false);
         },
     });
 
