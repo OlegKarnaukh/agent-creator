@@ -355,7 +355,7 @@ export default function Landing() {
                         Бесплатно <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">навсегда</span> для малого бизнеса
                     </motion.h2>
 
-                    <div className="grid md:grid-cols-3 gap-8">
+                    <div className="grid md:grid-cols-3 gap-8 items-end">
                         {[
                             {
                                 name: 'FREE',
@@ -363,14 +363,14 @@ export default function Landing() {
                                 period: 'навсегда',
                                 features: ['До 300 диалогов', '1 сотрудник', '1 канал', 'Базовая аналитика'],
                                 button: 'Запустить бесплатно',
-                                featured: false
+                                featured: true
                             },
                             {
                                 name: 'Starter',
                                 price: '2 990₽',
                                 period: '/месяц',
                                 features: ['5000 диалогов', '5 сотрудников', '5 каналов', 'Расширенная аналитика'],
-                                button: 'Попробовать 7 дней',
+                                button: 'Попробовать бесплатно',
                                 featured: false
                             },
                             {
@@ -378,8 +378,8 @@ export default function Landing() {
                                 price: '9 990₽',
                                 period: '/месяц',
                                 features: ['Все диалоги', '50 сотрудников', 'Все каналы + IP-телефония', 'Расширенная аналитика', 'CRM интеграция', 'Дожимающие серии', 'Приоритетная поддержка'],
-                                button: 'Попробовать 7 дней',
-                                featured: true
+                                button: 'Попробовать бесплатно',
+                                featured: false
                             }
                         ].map((plan, i) => (
                             <motion.div 
@@ -387,33 +387,33 @@ export default function Landing() {
                                 {...fadeInUp}
                                 className={`rounded-2xl border p-8 transition-all ${
                                     plan.featured 
-                                        ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 shadow-2xl ring-2 ring-blue-500 scale-105' 
+                                        ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-2xl ring-2 ring-green-500' 
                                         : 'border-slate-100 bg-white hover:shadow-lg'
                                 }`}
                             >
                                 {plan.featured && (
-                                    <div className="mb-4 inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                                        Популярно
+                                    <div className="mb-4 inline-block bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                                        Бесплатно навсегда
                                     </div>
                                 )}
-                                <h3 className={`text-2xl font-bold mb-1 ${plan.featured ? 'text-slate-900' : 'text-slate-900'}`}>{plan.name}</h3>
+                                <h3 className="text-2xl font-bold mb-1 text-slate-900">{plan.name}</h3>
                                 <div className="mb-6">
-                                    <span className={`text-4xl font-bold ${plan.featured ? 'text-slate-900' : 'text-slate-900'}`}>{plan.price}</span>
-                                    <span className={`text-sm ${plan.featured ? 'text-slate-600' : 'text-slate-600'}`}>{plan.period}</span>
+                                    <span className="text-4xl font-bold text-slate-900">{plan.price}</span>
+                                    <span className="text-sm text-slate-600">{plan.period}</span>
                                 </div>
 
-                                <ul className="space-y-3 mb-8">
+                                <ul className="space-y-3 mb-8 flex-1">
                                     {plan.features.map((feature, j) => (
                                         <li key={j} className="flex gap-3">
-                                            <CheckCircle2 className={`w-5 h-5 flex-shrink-0 ${plan.featured ? 'text-blue-600' : 'text-emerald-600'}`} />
-                                            <span className={`text-sm ${plan.featured ? 'text-slate-700' : 'text-slate-600'}`}>{feature}</span>
+                                            <CheckCircle2 className={`w-5 h-5 flex-shrink-0 ${plan.featured ? 'text-green-600' : 'text-emerald-600'}`} />
+                                            <span className="text-sm text-slate-600">{feature}</span>
                                         </li>
                                     ))}
                                 </ul>
 
                                 <button className={`w-full py-3 rounded-lg font-semibold transition-all transform hover:scale-105 ${
                                     plan.featured 
-                                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg' 
+                                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg' 
                                         : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
                                 }`}>
                                     {plan.button}
