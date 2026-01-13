@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
+import { toast } from 'sonner';
 
 export default function Auth() {
     const navigate = useNavigate();
@@ -23,6 +24,15 @@ export default function Auth() {
 
         try {
             await base44.auth.signIn(email, password);
+            
+            // Синхронизируем пользователя с Railway
+            try {
+                await base44.functions.invoke('syncUserWithRailway');
+            } catch (syncError) {
+                console.error('Railway sync error:', syncError);
+                toast.error('Ошибка синхронизации');
+            }
+            
             const user = await base44.auth.me();
             
             // Проверяем есть ли агенты
@@ -48,6 +58,14 @@ export default function Auth() {
         try {
             await base44.auth.signUp(email, password, fullName);
             await base44.auth.signIn(email, password);
+            
+            // Синхронизируем пользователя с Railway
+            try {
+                await base44.functions.invoke('syncUserWithRailway');
+            } catch (syncError) {
+                console.error('Railway sync error:', syncError);
+                toast.error('Ошибка синхронизации');
+            }
             
             // Новый пользователь → сразу на AgentBuilder (без демо-данных)
             navigate(createPageUrl('AgentBuilder'));
