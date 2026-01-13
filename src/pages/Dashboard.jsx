@@ -141,9 +141,9 @@ export default function Dashboard() {
                             transition={{ delay: 0.4 }}
                             className="bg-white rounded-2xl p-6 border border-slate-200"
                         >
-                            <h3 className="text-lg font-semibold text-slate-900 mb-6">Диалоги по месяцам</h3>
+                            <h3 className="text-lg font-semibold text-slate-900 mb-6">Диалоги в этом месяце</h3>
                             <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={monthlyConversations}>
+                                <LineChart data={dailyConversations}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                                     <XAxis dataKey="month" stroke="#64748b" />
                                     <YAxis stroke="#64748b" />
