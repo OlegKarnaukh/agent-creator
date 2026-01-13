@@ -19,6 +19,8 @@ export default function Auth() {
     });
     const [errors, setErrors] = useState({});
     const [emailConfirmationRequired, setEmailConfirmationRequired] = useState(false);
+    const [verificationCode, setVerificationCode] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
 
     const validateEmail = (email) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
