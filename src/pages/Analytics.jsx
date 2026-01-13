@@ -134,116 +134,86 @@ export default function Analytics() {
                 </div>
 
                 <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-white rounded-2xl p-6 border border-slate-200"
-                    >
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                            {new Date().toLocaleDateString('ru', { month: 'long', year: 'numeric' })}
-                        </h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={growthData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                                <defs>
-                                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1}/>
-                                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="0" stroke="#f1f5f9" vertical={false} />
-                                <XAxis 
-                                    dataKey="date" 
-                                    stroke="#94a3b8" 
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <YAxis 
-                                    yAxisId="left" 
-                                    stroke="#94a3b8" 
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <YAxis 
-                                    yAxisId="right" 
-                                    orientation="right" 
-                                    stroke="#94a3b8" 
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <Tooltip 
-                                    contentStyle={{ 
-                                        backgroundColor: '#fff', 
-                                        border: 'none',
-                                        borderRadius: '12px',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                                    }}
-                                />
-                                <Legend 
-                                    wrapperStyle={{ paddingTop: '20px' }}
-                                    iconType="circle"
-                                />
-                                <Line 
-                                    yAxisId="left"
-                                    type="monotone" 
-                                    dataKey="users" 
-                                    stroke="#0ea5e9" 
-                                    strokeWidth={3}
-                                    name="Пользователи"
-                                    dot={false}
-                                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
-                                    fill="url(#colorUsers)"
-                                />
-                                <Line 
-                                    yAxisId="right"
-                                    type="monotone" 
-                                    dataKey="revenue" 
-                                    stroke="#10b981" 
-                                    strokeWidth={3}
-                                    name="Доход (₽)"
-                                    dot={false}
-                                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
-                                    fill="url(#colorRevenue)"
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </motion.div>
-
-                    {/* Распределение по тарифам */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="bg-white rounded-2xl p-6 border border-slate-200"
-                    >
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Распределение по тарифам</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={planDistribution}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    outerRadius={100}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {planDistribution.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </motion.div>
-                </div>
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-white rounded-2xl p-6 border border-slate-200 mb-6"
+                >
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                        {new Date().toLocaleDateString('ru', { month: 'long', year: 'numeric' })}
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={growthData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                            <defs>
+                                <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1}/>
+                                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                                </linearGradient>
+                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="0" stroke="#f1f5f9" vertical={false} />
+                            <XAxis 
+                                dataKey="date" 
+                                stroke="#94a3b8" 
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                            />
+                            <YAxis 
+                                yAxisId="left" 
+                                stroke="#94a3b8" 
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                            />
+                            <YAxis 
+                                yAxisId="right" 
+                                orientation="right" 
+                                stroke="#94a3b8" 
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                            />
+                            <Tooltip 
+                                contentStyle={{ 
+                                    backgroundColor: '#fff', 
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}
+                            />
+                            <Legend 
+                                wrapperStyle={{ paddingTop: '20px' }}
+                                iconType="circle"
+                            />
+                            <Line 
+                                yAxisId="left"
+                                type="monotone" 
+                                dataKey="users" 
+                                stroke="#0ea5e9" 
+                                strokeWidth={3}
+                                name="Пользователи"
+                                dot={false}
+                                activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                                fill="url(#colorUsers)"
+                            />
+                            <Line 
+                                yAxisId="right"
+                                type="monotone" 
+                                dataKey="revenue" 
+                                stroke="#10b981" 
+                                strokeWidth={3}
+                                name="Доход (₽)"
+                                dot={false}
+                                activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                                fill="url(#colorRevenue)"
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </motion.div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Распределение по тарифам */}
