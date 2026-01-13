@@ -32,8 +32,13 @@ export default function MaxConnect({ agentId, onSuccess }) {
             return;
         }
 
+        setShowVerificationDialog(true);
+    };
+
+    const handleConnectConfirm = async () => {
         setIsConnecting(true);
         setError(null);
+        setShowVerificationDialog(false);
 
         try {
             const selectedAgent = agents.find(a => a.id === selectedAgentId);
