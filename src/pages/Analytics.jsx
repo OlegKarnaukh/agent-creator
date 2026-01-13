@@ -60,23 +60,7 @@ export default function Analytics() {
         { name: 'Enterprise', value: usersByPlan.enterprise || 7, color: '#f59e0b' }
     ];
 
-    // Топ пользователей по использованию токенов (с демо данными)
-    const realTopUsers = billings
-        .sort((a, b) => (b.tokens_used || 0) - (a.tokens_used || 0))
-        .slice(0, 5)
-        .map(b => ({
-            user_id: b.user_id,
-            tokens: b.tokens_used || 0,
-            plan: b.plan
-        }));
 
-    const topUsers = realTopUsers.length > 0 ? realTopUsers : [
-        { user_id: 'demo_user_1', tokens: 245000, plan: 'enterprise' },
-        { user_id: 'demo_user_2', tokens: 189000, plan: 'pro' },
-        { user_id: 'demo_user_3', tokens: 156000, plan: 'pro' },
-        { user_id: 'demo_user_4', tokens: 98000, plan: 'starter' },
-        { user_id: 'demo_user_5', tokens: 67000, plan: 'starter' }
-    ];
 
     const stats = [
         {
@@ -215,36 +199,35 @@ export default function Analytics() {
                     </ResponsiveContainer>
                 </motion.div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Распределение по тарифам */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="bg-white rounded-2xl p-6 border border-slate-200"
-                    >
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Распределение по тарифам</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={planDistribution}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    outerRadius={100}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {planDistribution.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </motion.div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-white rounded-2xl p-6 border border-slate-200 mb-6"
+                >
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Распределение по тарифам</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                            <Pie
+                                data={planDistribution}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                outerRadius={100}
+                                fill="#8884d8"
+                                dataKey="value"
+                            >
+                                {planDistribution.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </motion.div>
 
+                <div className="grid grid-cols-1 gap-6">
                     {/* Средние показатели */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
