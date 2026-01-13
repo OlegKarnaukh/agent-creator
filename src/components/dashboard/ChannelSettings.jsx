@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageSquare, Phone, Send, Globe, Settings, ExternalLink } from 'lucide-react';
+import { MessageSquare, Phone, Send, Globe, Settings, ExternalLink, Home, Users, Zap } from 'lucide-react';
 import TelegramConnect from '@/components/channels/TelegramConnect';
 import WhatsAppConnect from '@/components/channels/WhatsAppConnect';
 import PhoneConnect from '@/components/channels/PhoneConnect';
@@ -39,6 +39,27 @@ const channels = [
         icon: Globe,
         color: 'bg-orange-500',
         description: 'Чат-виджет для вашего сайта'
+    },
+    {
+        id: 'avito',
+        name: 'Avito',
+        icon: Home,
+        color: 'bg-red-500',
+        description: 'Интеграция с Avito'
+    },
+    {
+        id: 'vk',
+        name: 'VK',
+        icon: Users,
+        color: 'bg-blue-600',
+        description: 'Интеграция с VK'
+    },
+    {
+        id: 'max',
+        name: 'Max',
+        icon: Zap,
+        color: 'bg-yellow-500',
+        description: 'Интеграция с Max'
     },
 ];
 
@@ -141,6 +162,9 @@ export default function ChannelSettings({ agent }) {
                             {connectDialog === 'whatsapp' && 'Подключить WhatsApp'}
                             {connectDialog === 'phone' && 'Подключить телефонию'}
                             {connectDialog === 'website' && 'Подключить виджет'}
+                            {connectDialog === 'avito' && 'Подключить Avito'}
+                            {connectDialog === 'vk' && 'Подключить VK'}
+                            {connectDialog === 'max' && 'Подключить Max'}
                         </DialogTitle>
                     </DialogHeader>
                     
@@ -167,6 +191,11 @@ export default function ChannelSettings({ agent }) {
                             agentId={agent?.id} 
                             onSuccess={handleConnectionSuccess}
                         />
+                    )}
+                    {['avito', 'vk', 'max'].includes(connectDialog) && (
+                        <div className="p-4 text-center text-slate-600">
+                            <p className="text-sm">Скоро будет доступно</p>
+                        </div>
                     )}
                 </DialogContent>
             </Dialog>
