@@ -39,7 +39,7 @@ export default function Landing() {
             {/* HEADER */}
             <header className={`fixed top-0 w-full z-50 transition-all ${isScrolled ? 'bg-white border-b border-slate-100 shadow-sm' : 'bg-transparent'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <h1 className={`text-2xl font-bold transition-colors ${isScrolled ? 'text-slate-900' : 'text-white'}`}>NeuroSeller</h1>
+                    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69611ae203d0641b357eee81/174650a65_1edad0dedf741d1934ae71f5efc20db7_6a91ba24-a241-4a36-97cf-8bd7fd02304011.jpg" alt="NeuroSeller" className="h-8" />
                     <button onClick={handleStartClick} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl">
                         Запустить бесплатно
                     </button>

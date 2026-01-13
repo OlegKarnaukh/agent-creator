@@ -63,9 +63,7 @@ export default function Auth() {
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-100">
                     {/* Logo */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center mx-auto mb-6">
-                        <span className="text-white font-bold text-lg">N</span>
-                    </div>
+                    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69611ae203d0641b357eee81/174650a65_1edad0dedf741d1934ae71f5efc20db7_6a91ba24-a241-4a36-97cf-8bd7fd02304011.jpg" alt="NeuroSeller" className="w-16 h-16 mx-auto mb-6" />
 
                     {/* Title */}
                     <h1 className="text-3xl font-bold text-slate-900 text-center mb-2">
