@@ -67,11 +67,40 @@ const channels = [
 
 export default function ChannelSettings({ agent }) {
     const [connectDialog, setConnectDialog] = useState(null);
+    const [disconnectDialog, setDisconnectDialog] = useState(null);
+    const queryClient = useQueryClient();
 
     const { data: connectedChannels = [], refetch } = useQuery({
         queryKey: ['channels', agent?.id],
         queryFn: () => base44.entities.Channel.filter({ agent_id: agent?.id }),
         enabled: !!agent?.id,
+    });
+
+    const disconnectMutation = useMutation({
+        mutationFn: async (channelId) => {
+            const response = await fetch(
+                `https://neuro-seller-production.up.railway.app/api/v1/channels/${channelId}`,
+                { method: 'DELETE' }
+            );
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Ошибка отключения');
+            }
+            
+            return await response.json();
+        },
+        onSuccess: async (_, channelId) => {
+            await base44.entities.Channel.delete(
+                connectedChannels.find(c => c.metadata?.railway_channel_id === channelId)?.id
+            );
+            refetch();
+            toast.success('Бот отключён');
+            setDisconnectDialog(null);
+        },
+        onError: (error) => {
+            toast.error('Ошибка: ' + error.message);
+        }
     });
 
     const isChannelEnabled = (channelId) => {
