@@ -26,11 +26,15 @@ export default function Landing() {
     }, []);
 
     const handleStartClick = async () => {
-        const isAuthenticated = await base44.auth.isAuthenticated();
-        if (isAuthenticated) {
-            navigate(createPageUrl('Agents'));
-        } else {
-            navigate(createPageUrl('Auth'));
+        try {
+            const isAuthenticated = await base44.auth.isAuthenticated();
+            if (isAuthenticated) {
+                navigate(createPageUrl('Dashboard'));
+            } else {
+                navigate(createPageUrl('Auth') + '?mode=signup');
+            }
+        } catch (error) {
+            navigate(createPageUrl('Auth') + '?mode=signup');
         }
     };
 
