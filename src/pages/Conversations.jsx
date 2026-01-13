@@ -34,6 +34,7 @@ export default function Conversations() {
     const [searchQuery, setSearchQuery] = useState('');
     const [channelFilter, setChannelFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [agentFilter, setAgentFilter] = useState('all');
 
     const { data: conversations = [], isLoading } = useQuery({
         queryKey: ['conversations'],
@@ -51,7 +52,8 @@ export default function Conversations() {
             conv.customer_phone?.includes(searchQuery);
         const matchesChannel = channelFilter === 'all' || conv.channel === channelFilter;
         const matchesStatus = statusFilter === 'all' || conv.status === statusFilter;
-        return matchesSearch && matchesChannel && matchesStatus;
+        const matchesAgent = agentFilter === 'all' || conv.agent_id === agentFilter;
+        return matchesSearch && matchesChannel && matchesStatus && matchesAgent;
     });
 
     const getAgentName = (agentId) => {
@@ -83,9 +85,9 @@ export default function Conversations() {
                         />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                         <Select value={channelFilter} onValueChange={setChannelFilter}>
-                            <SelectTrigger className="flex-1">
+                            <SelectTrigger className="flex-1 min-w-[120px]">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -98,7 +100,7 @@ export default function Conversations() {
                         </Select>
 
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="flex-1">
+                            <SelectTrigger className="flex-1 min-w-[120px]">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -106,6 +108,20 @@ export default function Conversations() {
                                 <SelectItem value="active">Активные</SelectItem>
                                 <SelectItem value="completed">Завершённые</SelectItem>
                                 <SelectItem value="transferred">Переданные</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={agentFilter} onValueChange={setAgentFilter}>
+                            <SelectTrigger className="flex-1 min-w-[120px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Все агенты</SelectItem>
+                                {agents.map(agent => (
+                                    <SelectItem key={agent.id} value={agent.id}>
+                                        {agent.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
