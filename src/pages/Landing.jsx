@@ -218,13 +218,13 @@ export default function Landing() {
             </section>
 
             {/* HOW IT WORKS */}
-            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50">
                 <div className="max-w-6xl mx-auto">
                     <motion.h2 
                         {...fadeInUp}
-                        className="text-4xl font-bold text-slate-900 text-center mb-4"
+                        className="text-3xl sm:text-4xl font-bold text-slate-900 text-center mb-4"
                     >
-                        Запуск за 2 минуты. Без программистов.
+                        Запуск за <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">2 минуты</span>. Без программистов.
                     </motion.h2>
 
                     <div className="grid md:grid-cols-3 gap-8 mt-12">
