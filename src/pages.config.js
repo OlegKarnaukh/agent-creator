@@ -5,8 +5,8 @@ import Billing from './pages/Billing';
 import Channels from './pages/Channels';
 import Conversations from './pages/Conversations';
 import Dashboard from './pages/Dashboard';
-import Settings from './pages/Settings';
 import Landing from './pages/Landing';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
@@ -18,8 +18,8 @@ export const PAGES = {
     "Channels": Channels,
     "Conversations": Conversations,
     "Dashboard": Dashboard,
-    "Settings": Settings,
     "Landing": Landing,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {

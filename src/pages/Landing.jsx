@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Zap, MessageSquare, TrendingUp, Clock, CheckCircle2, Send, Globe, Home, Users, Phone, AlertCircle } from 'lucide-react';
+import { Zap, MessageSquare, TrendingUp, Clock, CheckCircle2, Send, Globe, Home, Users, Phone, AlertCircle, Settings, Plug, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeInUp = {
