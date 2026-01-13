@@ -65,14 +65,14 @@ export default function Landing() {
                         className="grid grid-cols-2 md:grid-cols-4 gap-4"
                     >
                         {[
-                            { label: 'Ответ клиенту', value: '3 сек' },
-                            { label: 'Работает', value: '24/7' },
-                            { label: 'Диалогов бесплатно', value: '300' },
-                            { label: 'До запуска', value: '2 мин' }
+                            { label: 'Ответ клиенту', value: '3 сек', color: 'from-blue-500' },
+                            { label: 'Работает', value: '24/7', color: 'from-purple-500' },
+                            { label: 'Диалогов бесплатно', value: '300', color: 'from-emerald-500' },
+                            { label: 'До запуска', value: '2 мин', color: 'from-orange-500' }
                         ].map((stat, i) => (
-                            <div key={i} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-slate-500 text-xs sm:text-sm mb-2">{stat.label}</p>
-                                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{stat.value}</p>
+                            <div key={i} className={`bg-gradient-to-br ${stat.color} to-slate-700 rounded-xl p-4 shadow-lg hover:shadow-xl transition-shadow border border-white/10`}>
+                                <p className="text-slate-200 text-xs sm:text-sm mb-2">{stat.label}</p>
+                                <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
                             </div>
                         ))}
                     </motion.div>
