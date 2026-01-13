@@ -136,13 +136,13 @@ export default function Landing() {
             </section>
 
             {/* SOLUTION */}
-            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50 to-white">
                 <div className="max-w-6xl mx-auto">
                     <motion.h2 
                         {...fadeInUp}
-                        className="text-4xl font-bold text-slate-900 text-center mb-12"
+                        className="text-3xl sm:text-4xl font-bold text-slate-900 text-center mb-12"
                     >
-                        Нейропродавец — ваш идеальный сотрудник
+                        Нейропродавец — ваш <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">идеальный сотрудник</span>
                     </motion.h2>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
