@@ -39,6 +39,18 @@ export default function Dashboard() {
         totalChannels: agents.reduce((sum, a) => sum + (a.channels?.filter(c => c.enabled).length || 0), 0)
     };
 
+    // График диалогов по месяцам
+    const monthlyConversations = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - (11 - i));
+        const monthName = date.toLocaleString('ru-RU', { month: 'short' });
+        const count = allConversations.filter(c => {
+            const convDate = new Date(c.created_date);
+            return convDate.getMonth() === date.getMonth() && convDate.getFullYear() === date.getFullYear();
+        }).length;
+        return { month: monthName, conversations: count };
+    });
+
     const stats = [
         { 
             title: 'Всего агентов', 
