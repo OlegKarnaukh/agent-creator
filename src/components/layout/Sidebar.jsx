@@ -7,8 +7,6 @@ import {
     Bot, 
     Zap, 
     CreditCard,
-    Settings,
-    LogOut,
     BarChart3
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -26,10 +24,6 @@ const navigation = [
 export default function Sidebar({ user }) {
     const location = useLocation();
     const currentPath = location.pathname;
-
-    const handleLogout = async () => {
-        await base44.auth.logout();
-    };
 
     const isActive = (page) => {
         return currentPath === createPageUrl(page) || currentPath === `/${page}`;
@@ -62,26 +56,9 @@ export default function Sidebar({ user }) {
                 })}
             </nav>
 
-            <div className="p-4 border-t border-slate-200 space-y-2">
-                <Link to={createPageUrl('Settings')}>
-                    <Button variant="ghost" className="w-full justify-start">
-                        <Settings className="w-4 h-4 mr-3" />
-                        Настройки
-                    </Button>
-                </Link>
-                <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={handleLogout}
-                >
-                    <LogOut className="w-4 h-4 mr-3" />
-                    Выйти
-                </Button>
-            </div>
-
             {user && (
-                <div className="p-4 bg-slate-50">
-                    <div className="flex items-center gap-3">
+                <Link to={createPageUrl('Settings')} className="p-4 bg-slate-50 hover:bg-slate-100 transition-colors block">
+                    <div className="flex items-center gap-3 cursor-pointer">
                         <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-semibold">
                             {user.email?.[0]?.toUpperCase() || 'U'}
                         </div>
@@ -92,7 +69,7 @@ export default function Sidebar({ user }) {
                             <p className="text-xs text-slate-500 truncate">{user.email}</p>
                         </div>
                     </div>
-                </div>
+                </Link>
             )}
         </div>
     );
