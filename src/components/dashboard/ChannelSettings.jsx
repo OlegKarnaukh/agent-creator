@@ -12,6 +12,7 @@ import TelegramConnect from '@/components/channels/TelegramConnect';
 import WhatsAppConnect from '@/components/channels/WhatsAppConnect';
 import PhoneConnect from '@/components/channels/PhoneConnect';
 import WebsiteConnect from '@/components/channels/WebsiteConnect';
+import MaxConnect from '@/components/channels/MaxConnect';
 
 const channels = [
     {
