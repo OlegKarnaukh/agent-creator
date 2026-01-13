@@ -26,7 +26,7 @@ export default function Landing() {
     }, []);
 
     const handleStartClick = () => {
-        base44.auth.redirectToSignUp();
+        base44.auth.redirectToSignUp(createPageUrl('AgentBuilder'));
     };
 
     return (
@@ -36,7 +36,7 @@ export default function Landing() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <span className="text-xl font-bold text-slate-900">NeuroSeller</span>
                     <button onClick={handleStartClick} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl">
-                        Запустить бесплатно
+                        Попробовать бесплатно
                     </button>
                 </div>
             </header>
