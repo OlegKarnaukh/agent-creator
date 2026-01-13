@@ -1,17 +1,30 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function TelegramConnect({ agentId, onSuccess }) {
+    const [selectedAgentId, setSelectedAgentId] = useState(agentId || '');
     const [botToken, setBotToken] = useState('');
     const [isConnecting, setIsConnecting] = useState(false);
     const [error, setError] = useState(null);
 
+    const { data: agents = [] } = useQuery({
+        queryKey: ['active-agents'],
+        queryFn: () => base44.entities.Agent.filter({ status: 'active' }),
+    });
+
     const handleConnect = async () => {
+        if (!selectedAgentId) {
+            setError('Выберите агента');
+            return;
+        }
+
         if (!botToken.trim()) {
             setError('Введите токен бота');
             return;
@@ -21,62 +34,54 @@ export default function TelegramConnect({ agentId, onSuccess }) {
         setError(null);
 
         try {
-            // Проверяем токен через Telegram API
-            const response = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
-            const data = await response.json();
-
-            if (!data.ok) {
-                throw new Error('Неверный токен бота');
+            const selectedAgent = agents.find(a => a.id === selectedAgentId);
+            if (!selectedAgent?.external_agent_id) {
+                throw new Error('У агента отсутствует external_agent_id');
             }
 
-            const botInfo = data.result;
-
-            // Генерируем уникальный webhook URL
-            const webhookSecret = Math.random().toString(36).substring(7);
-            const webhookUrl = `${Deno.env.get('RAILWAY_API_URL') || 'https://neuro-seller-production.up.railway.app'}/api/v1/channels/telegram/webhook/${agentId}`;
-
-            // Устанавливаем webhook в Telegram
-            const setWebhookResponse = await fetch(
-                `https://api.telegram.org/bot${botToken}/setWebhook`,
+            // Отправляем запрос на Railway API
+            const response = await fetch(
+                'https://neuro-seller-production.up.railway.app/api/v1/channels/connect',
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        url: webhookUrl,
-                        secret_token: webhookSecret,
-                        allowed_updates: ['message', 'callback_query']
+                        agent_id: selectedAgent.external_agent_id,
+                        channel_type: 'telegram',
+                        credentials: {
+                            bot_token: botToken
+                        }
                     })
                 }
             );
 
-            const webhookData = await setWebhookResponse.json();
-
-            if (!webhookData.ok) {
-                throw new Error('Не удалось установить webhook');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка подключения');
             }
 
-            // Сохраняем канал в БД
+            const result = await response.json();
+
+            // Сохраняем канал в БД Base44
             await base44.entities.Channel.create({
-                agent_id: agentId,
+                agent_id: selectedAgentId,
                 type: 'telegram',
                 credentials: {
                     bot_token: botToken
                 },
                 status: 'active',
-                webhook_url: webhookUrl,
-                webhook_secret: webhookSecret,
+                webhook_url: result.webhook_url,
                 metadata: {
-                    bot_username: botInfo.username,
-                    bot_name: botInfo.first_name,
-                    bot_id: botInfo.id
+                    railway_channel_id: result.id,
+                    connection_status: result.status
                 }
             });
 
-            toast.success(`Telegram бот @${botInfo.username} подключен!`);
+            toast.success('Telegram бот подключён!');
             onSuccess?.();
         } catch (err) {
             setError(err.message);
-            toast.error('Ошибка подключения: ' + err.message);
+            toast.error('Ошибка: ' + err.message);
         } finally {
             setIsConnecting(false);
         }
@@ -89,8 +94,24 @@ export default function TelegramConnect({ agentId, onSuccess }) {
                 <p className="text-sm text-slate-500 mb-4">
                     1. Создайте бота через <a href="https://t.me/BotFather" target="_blank" className="text-blue-600 hover:underline">@BotFather</a><br/>
                     2. Скопируйте полученный токен<br/>
-                    3. Вставьте токен ниже
+                    3. Выберите агента и вставьте токен ниже
                 </p>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="agent_select">Агент</Label>
+                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Выберите агента" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {agents.map((agent) => (
+                            <SelectItem key={agent.id} value={agent.id}>
+                                {agent.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             <div className="space-y-2">
@@ -113,7 +134,7 @@ export default function TelegramConnect({ agentId, onSuccess }) {
 
             <Button
                 onClick={handleConnect}
-                disabled={isConnecting || !botToken.trim()}
+                disabled={isConnecting || !botToken.trim() || !selectedAgentId}
                 className="w-full"
             >
                 {isConnecting ? (
