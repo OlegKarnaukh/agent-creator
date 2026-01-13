@@ -1,3 +1,5 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
 Deno.serve(async (req) => {
     try {
         const { email, password, fullName } = await req.json();
@@ -9,41 +11,36 @@ Deno.serve(async (req) => {
             );
         }
 
-        // Регистрируем пользователя напрямую через встроенный механизм Base44
-        // Используем fetch к встроенному API регистрации
-        const APP_ID = Deno.env.get('BASE44_APP_ID');
-        const response = await fetch('https://auth.base44.com/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                app_id: APP_ID,
-                email,
-                password,
-                full_name: fullName
-            })
-        });
+        const base44 = createClientFromRequest(req);
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            if (response.status === 409 || data.message?.includes('already')) {
-                return Response.json(
-                    { error: 'Этот email уже зарегистрирован' },
-                    { status: 409 }
-                );
-            }
+        // Проверяем, существует ли уже такой пользователь
+        const allUsers = await base44.asServiceRole.entities.User.list();
+        if (allUsers.some(u => u.email === email)) {
             return Response.json(
-                { error: data.message || 'Ошибка регистрации' },
-                { status: response.status }
+                { error: 'Этот email уже зарегистрирован' },
+                { status: 409 }
             );
         }
 
+        // Регистрируем пользователя - просто создаем в системе
+        const user = await base44.asServiceRole.users.inviteUser(email, 'user');
+
         return Response.json({ 
             success: true, 
-            user: { id: data.id, email: data.email }
+            user: { id: user.id, email: user.email, full_name: fullName }
         });
     } catch (error) {
-        console.error('Registration error:', error.message);
+        console.error('Registration error:', error);
+        
+        // Проверяем конкретные ошибки
+        const errorMsg = error.message || error.toString();
+        if (errorMsg.includes('already') || errorMsg.includes('duplicate') || errorMsg.includes('409')) {
+            return Response.json(
+                { error: 'Этот email уже зарегистрирован' },
+                { status: 409 }
+            );
+        }
+        
         return Response.json(
             { error: 'Ошибка регистрации. Попробуйте ещё раз' },
             { status: 500 }
