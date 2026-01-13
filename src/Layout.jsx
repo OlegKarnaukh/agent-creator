@@ -4,7 +4,7 @@ import Sidebar from './components/layout/Sidebar';
 import { base44 } from '@/api/base44Client';
 
 // Страницы без sidebar
-const pagesWithoutSidebar = ['AgentBuilder'];
+const pagesWithoutSidebar = ['AgentBuilder', 'Landing'];
 
 export default function Layout({ children, currentPageName }) {
     const [user, setUser] = useState(null);
