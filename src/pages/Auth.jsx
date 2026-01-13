@@ -56,20 +56,35 @@ export default function Auth() {
         setLoading(true);
 
         try {
-            // Используем встроенный механизм Base44 - просто заходим в систему регистрации
+            // Регистрируем пользователя через backend функцию
+            const response = await base44.functions.invoke('registerUser', {
+                email,
+                password,
+                fullName
+            });
+
+            if (!response.data.success) {
+                setError(response.data.error || 'Ошибка регистрации');
+                setLoading(false);
+                return;
+            }
+
+            // Автоматически входим после регистрации
             await base44.auth.signIn(email, password);
 
-            // Если вход успешен, значит аккаунт существует - перенаправляем
-            const agents = await base44.entities.Agent.list();
-
-            if (agents.length > 0) {
-                navigate(createPageUrl('Dashboard'));
-            } else {
-                navigate(createPageUrl('AgentBuilder'));
+            // Синхронизируем пользователя с Railway
+            try {
+                await base44.functions.invoke('syncUserWithRailway');
+            } catch (syncError) {
+                console.error('Railway sync error:', syncError);
             }
+
+            // Переходим на AgentBuilder
+            navigate(createPageUrl('AgentBuilder'));
         } catch (err) {
-            // Если вход не прошёл, значит это новый пользователь - переходим на регистрацию
-            await base44.auth.redirectToLogin(createPageUrl('AgentBuilder'));
+            setError(err.response?.data?.error || err.message || 'Ошибка регистрации. Попробуйте ещё раз');
+        } finally {
+            setLoading(false);
         }
     };
 
