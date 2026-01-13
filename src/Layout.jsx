@@ -24,7 +24,7 @@ export default function Layout({ children, currentPageName }) {
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="h-screen bg-slate-50">
             <style>{`
                 :root {
                     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -61,9 +61,9 @@ export default function Layout({ children, currentPageName }) {
             `}</style>
             
             {showSidebar ? (
-                <div className="flex">
+                <div className="flex h-screen">
                     <Sidebar user={user} />
-                    <div className="flex-1">
+                    <div className="flex-1 overflow-y-auto">
                         {children}
                     </div>
                 </div>
