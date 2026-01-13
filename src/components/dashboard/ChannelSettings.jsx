@@ -62,7 +62,7 @@ const channels = [
         name: 'Max',
         icon: Zap,
         color: 'bg-yellow-500',
-        description: 'Интеграция с Max'
+        description: 'Max мессенджер для бизнеса'
     },
 ];
 
