@@ -99,26 +99,21 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
                         {!isArchived && <p className="text-xs text-slate-500">{agent.business_type || 'Бизнес'}</p>}
                     </div>
                 </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Редактировать</DropdownMenuItem>
-                        <DropdownMenuItem>Дублировать</DropdownMenuItem>
-                        {isArchived ? (
-                            <DropdownMenuItem onClick={() => restoreMutation.mutate()}>
-                                <RotateCcw className="w-4 h-4 mr-2" />
-                                Восстановить
-                            </DropdownMenuItem>
-                        ) : (
+                {!isArchived && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem>Редактировать</DropdownMenuItem>
+                            <DropdownMenuItem>Дублировать</DropdownMenuItem>
                             <DropdownMenuItem 
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -129,9 +124,22 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
                                 <Archive className="w-4 h-4 mr-2" />
                                 Архивировать
                             </DropdownMenuItem>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+                {isArchived && (
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            restoreMutation.mutate();
+                        }}
+                    >
+                        <RotateCcw className="w-3 h-3" />
+                    </Button>
+                )}
             </div>
 
             {!isArchived && (
