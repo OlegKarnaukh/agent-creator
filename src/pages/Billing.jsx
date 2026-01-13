@@ -11,27 +11,21 @@ import { ru } from 'date-fns/locale';
 const planFeatures = {
     free: {
         name: 'Free',
-        tokens: 100000,
-        price: '0₽',
-        features: ['100K токенов/месяц', '1 агент', 'Базовая поддержка']
+        tokens: 300,
+        price: 'Бесплатно',
+        features: ['300 токенов', '1 агент', '1 канал', 'Базовая аналитика']
     },
     starter: {
         name: 'Starter',
-        tokens: 500000,
-        price: '2 990₽',
-        features: ['500K токенов/месяц', '3 агента', 'Email поддержка']
+        tokens: 5000,
+        price: '2 900₽',
+        features: ['5000 токенов', '5 агентов', '5 каналов', 'Расширенная аналитика']
     },
     pro: {
         name: 'Pro',
-        tokens: 2000000,
-        price: '9 990₽',
-        features: ['2M токенов/месяц', '10 агентов', 'Приоритетная поддержка']
-    },
-    enterprise: {
-        name: 'Enterprise',
-        tokens: 10000000,
-        price: 'По запросу',
-        features: ['10M+ токенов/месяц', 'Безлимит агентов', 'Персональный менеджер']
+        tokens: 30000,
+        price: '9 900₽',
+        features: ['30000 токенов', '50 агентов', 'Все каналы', 'Полная аналитика', 'Приоритетная поддержка']
     }
 };
 
@@ -49,10 +43,11 @@ export default function Billing() {
 
     const currentBilling = useMemo(() => {
         if (!billingRecords.length) {
+            // Демо данные для визуализации
             return {
-                plan: 'free',
-                tokens_used: 0,
-                tokens_limit: 100000,
+                plan: 'starter',
+                tokens_used: 2340,
+                tokens_limit: 5000,
                 period_start: startOfMonth(new Date()).toISOString(),
                 period_end: endOfMonth(new Date()).toISOString()
             };
@@ -171,7 +166,7 @@ export default function Billing() {
                     </Card>
                 </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {Object.entries(planFeatures).map(([key, plan], idx) => (
                         <motion.div
                             key={key}
