@@ -116,7 +116,13 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
                                 Восстановить
                             </DropdownMenuItem>
                         ) : (
-                            <DropdownMenuItem onClick={() => setShowDialog(true)} className="text-amber-600">
+                            <DropdownMenuItem 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowDialog(true);
+                                }} 
+                                className="text-amber-600"
+                            >
                                 <Archive className="w-4 h-4 mr-2" />
                                 Архивировать
                             </DropdownMenuItem>
