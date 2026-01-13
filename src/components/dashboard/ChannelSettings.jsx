@@ -160,21 +160,29 @@ export default function ChannelSettings({ agent }) {
                                         <p className="text-xs text-slate-500">{channel.description}</p>
                                     </div>
                                 </div>
-                                <Button 
-                                    variant={isEnabled ? "outline" : "default"}
-                                    size="sm"
-                                    className={isEnabled ? "" : "bg-slate-900 hover:bg-slate-800"}
-                                    onClick={() => isEnabled ? null : handleConnect(channel.id)}
-                                >
-                                    {isEnabled ? (
-                                        <>
-                                            <ExternalLink className="w-3 h-3 mr-1" />
-                                            Настройки
-                                        </>
-                                    ) : (
-                                        'Подключить'
-                                    )}
-                                </Button>
+                                {isEnabled ? (
+                                    <Button 
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-red-600 hover:text-red-700 hover:border-red-200 hover:bg-red-50"
+                                        onClick={() => setDisconnectDialog(getChannelData(channel.id))}
+                                        disabled={disconnectMutation.isPending}
+                                    >
+                                        {disconnectMutation.isPending ? (
+                                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                        ) : null}
+                                        Отключить
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        variant="default"
+                                        size="sm"
+                                        className="bg-slate-900 hover:bg-slate-800"
+                                        onClick={() => handleConnect(channel.id)}
+                                    >
+                                        Подключить
+                                    </Button>
+                                )}
                             </div>
                         </motion.div>
                     );
