@@ -237,7 +237,7 @@ export default function Landing() {
                                 <motion.div 
                                     key={i}
                                     {...fadeInUp}
-                                    className="bg-white rounded-2xl border border-slate-100 p-8 text-center"
+                                    className="bg-white rounded-2xl border border-slate-100 p-8 text-center hover:shadow-lg transition-shadow"
                                 >
                                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
                                         <Icon className="w-7 h-7 text-blue-600" />
