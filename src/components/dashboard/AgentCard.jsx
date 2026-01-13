@@ -184,7 +184,8 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
                     <div className="flex gap-3">
                         <AlertDialogCancel>Отмена</AlertDialogCancel>
                         <AlertDialogAction 
-                            onClick={() => {
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 archiveMutation.mutate();
                                 setShowDialog(false);
                             }}
