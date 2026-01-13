@@ -43,7 +43,7 @@ export default function Landing() {
                         {...fadeInUp}
                         className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight tracking-tight"
                     >
-                        Нейропродавец, который работает <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">24/7</span>, отвечает мгновенно и доводит до оплаты
+                        Нейропродавец, который работает <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">24/7</span> – отвечает мгновенно и доводит до оплаты
                     </motion.h2>
                     <motion.p 
                         {...fadeInUp}
