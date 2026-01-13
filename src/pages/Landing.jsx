@@ -48,13 +48,13 @@ export default function Landing() {
                     </motion.h2>
                     <motion.p 
                         {...fadeInUp}
-                        className="text-xl text-slate-600 mb-8 leading-relaxed"
+                        className="text-lg text-slate-300 mb-8 leading-relaxed"
                     >
                         Закрывает возражения, досконально знает продукт и не просит зарплату. Бесплатно навсегда для малого бизнеса.
                     </motion.p>
                     <motion.button 
                         {...fadeInUp}
-                        className="px-8 py-4 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-semibold text-lg mb-12"
+                        className="px-8 py-4 bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-lg mb-12 shadow-lg"
                     >
                         Запустить бесплатно за 2 минуты
                     </motion.button>
