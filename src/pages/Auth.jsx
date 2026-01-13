@@ -117,6 +117,35 @@ export default function Auth() {
         setIsLogin(!isLogin);
         setFormData({ email: '', password: '', full_name: '' });
         setErrors({});
+        setEmailConfirmationRequired(false);
+        setVerificationCode('');
+    };
+
+    const handleVerifyEmail = async (e) => {
+        e.preventDefault();
+        if (verificationCode.length !== 6) {
+            toast.error('Код должен состоять из 6 цифр');
+            return;
+        }
+
+        setIsVerifying(true);
+        try {
+            await base44.auth.verifyEmail(verificationCode);
+            
+            await base44.auth.login({
+                email: formData.email,
+                password: formData.password
+            });
+            const currentUser = await base44.auth.me();
+            await syncUser(currentUser);
+            
+            toast.success('Email подтвержден!');
+            navigate(createPageUrl('Dashboard'));
+        } catch (error) {
+            toast.error(error.message || 'Неверный код подтверждения');
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
     return (
