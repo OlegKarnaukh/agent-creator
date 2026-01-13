@@ -30,13 +30,13 @@ export default function Sidebar({ user }) {
     };
 
     return (
-        <div className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen">
+        <div className="w-64 bg-white border-r border-slate-200 flex flex-col overflow-hidden" style={{height: '100vh'}}>
             <div className="p-6 border-b border-slate-200 flex-shrink-0">
                 <h1 className="text-xl font-bold text-slate-900">NeuroSeller</h1>
                 <p className="text-xs text-slate-500 mt-1">AI Агенты для бизнеса</p>
             </div>
 
-            <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
+            <nav className="flex-1 overflow-y-auto p-4 space-y-1">
                 {navigation.map((item) => {
                     const active = isActive(item.page);
                     return (
