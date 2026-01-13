@@ -26,7 +26,7 @@ export default function Landing() {
     }, []);
 
     const handleStartClick = () => {
-        base44.auth.redirectToSignUp(createPageUrl('AgentBuilder'));
+        base44.auth.redirectToLogin(createPageUrl('AgentBuilder'));
     };
 
     return (
