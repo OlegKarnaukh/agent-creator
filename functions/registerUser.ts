@@ -14,11 +14,9 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
 
         // Создаем пользователя через сервис-роль
-        const user = await base44.asServiceRole.users.createUser({
-            email,
-            password,
+        const user = await base44.asServiceRole.users.inviteUser(email, 'user', {
             full_name: fullName,
-            role: 'user'
+            password
         });
 
         return Response.json({ 
