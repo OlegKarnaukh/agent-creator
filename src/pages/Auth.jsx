@@ -51,32 +51,18 @@ export default function Auth() {
     };
 
     const handleSignUp = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
+            e.preventDefault();
+            setError('');
+            setLoading(true);
 
-        try {
-            // Используем встроенный механизм Base44 для регистрации
-            await base44.auth.signUp(email, password, fullName);
-
-            // Автоматически входим после регистрации
-            await base44.auth.signIn(email, password);
-
-            // Синхронизируем пользователя с Railway
             try {
-                await base44.functions.invoke('syncUserWithRailway');
-            } catch (syncError) {
-                console.error('Railway sync error:', syncError);
+                // Используем встроенную регистрацию Base44
+                await base44.auth.redirectToSignUp(createPageUrl('AgentBuilder'));
+            } catch (err) {
+                setError(err.message || 'Ошибка регистрации');
+                setLoading(false);
             }
-
-            // Переходим на AgentBuilder
-            navigate(createPageUrl('AgentBuilder'));
-        } catch (err) {
-            setError(err.message || 'Ошибка регистрации. Попробуйте ещё раз');
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
