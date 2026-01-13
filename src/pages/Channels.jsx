@@ -60,8 +60,8 @@ export default function Channels() {
     return (
         <div className="min-h-screen bg-slate-50">
             <div className="p-8">
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
+                <div className="mb-8">
+                    <div className="flex items-center gap-4 mb-6">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -70,22 +70,18 @@ export default function Channels() {
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </Button>
-                        <div>
-                            <h1 className="text-3xl font-bold text-slate-900">Каналы связи</h1>
-                            <p className="text-slate-500 mt-1">
-                                {selectedAgent ? `Настройка каналов для ${selectedAgent.name}` : 'Выберите агента'}
-                            </p>
-                        </div>
+                        <h1 className="text-3xl font-bold text-slate-900">Каналы связи</h1>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 ml-12">
+                        <span className="text-sm text-slate-600">Агент:</span>
                         <select
                             value={selectedAgent?.id || ''}
                             onChange={(e) => {
                                 const agent = agents.find(a => a.id === e.target.value);
                                 setSelectedAgent(agent);
                             }}
-                            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                            className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
                         >
                             {agents.map(agent => (
                                 <option key={agent.id} value={agent.id}>
