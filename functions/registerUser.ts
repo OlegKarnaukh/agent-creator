@@ -13,10 +13,21 @@ Deno.serve(async (req) => {
 
         const base44 = createClientFromRequest(req);
 
-        // Создаем пользователя через сервис-роль
-        const user = await base44.asServiceRole.users.inviteUser(email, 'user', {
-            full_name: fullName,
-            password
+        // Проверяем есть ли уже такой юзер
+        const existingUsers = await base44.asServiceRole.entities.User.filter({ email });
+        
+        if (existingUsers.length > 0) {
+            return Response.json(
+                { error: 'Этот email уже зарегистрирован' },
+                { status: 409 }
+            );
+        }
+
+        // Создаем пользователя через встроенный метод
+        const user = await base44.asServiceRole.auth.createUser({
+            email,
+            password,
+            full_name: fullName
         });
 
         return Response.json({ 
@@ -24,7 +35,7 @@ Deno.serve(async (req) => {
             user: { id: user.id, email: user.email }
         });
     } catch (error) {
-        console.error('Registration error:', error);
+        console.error('Registration error:', error.message, error);
         
         // Если юзер уже существует
         if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
