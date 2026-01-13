@@ -61,9 +61,9 @@ export default function Layout({ children, currentPageName }) {
             `}</style>
             
             {showSidebar ? (
-                <div className="flex">
+                <div className="flex h-screen overflow-hidden">
                     <Sidebar user={user} />
-                    <div className="flex-1">
+                    <div className="flex-1 overflow-hidden">
                         {children}
                     </div>
                 </div>

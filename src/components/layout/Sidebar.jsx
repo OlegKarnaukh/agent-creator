@@ -31,8 +31,8 @@ export default function Sidebar({ user }) {
 
     return (
         <div className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen overflow-hidden">
-            <div className="p-6 border-b border-slate-200 shrink-0">
-                <h1 className="text-xl font-bold text-slate-900">NeuroSeller</h1>
+            <div className="p-6 border-b border-slate-200 shrink-0 bg-blue-50">
+                <h1 className="text-xl font-bold text-slate-900">NeuroSeller ✓</h1>
                 <p className="text-xs text-slate-500 mt-1">AI Агенты для бизнеса</p>
             </div>
 
