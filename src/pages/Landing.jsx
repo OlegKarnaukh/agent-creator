@@ -118,9 +118,11 @@ export default function Landing() {
                                 <motion.div 
                                     key={i}
                                     {...fadeInUp}
-                                    className="bg-slate-50 rounded-2xl border border-slate-100 p-6 hover:border-slate-200 transition-all"
+                                    className="group bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:border-slate-300 transition-all"
                                 >
-                                    <Icon className={`w-10 h-10 ${item.color} mb-4`} />
+                                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <Icon className={`w-6 h-6 ${item.color}`} />
+                                    </div>
                                     <h3 className="text-lg font-semibold text-slate-900 mb-3">{item.title}</h3>
                                     <p className="text-slate-600 mb-4 text-sm leading-relaxed">{item.desc}</p>
                                     <Badge className={item.color === 'text-red-500' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}>
