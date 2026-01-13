@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageSquare, Phone, Send, Globe, Settings, ExternalLink, Home, Users, Zap } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { MessageSquare, Phone, Send, Globe, Settings, ExternalLink, Home, Users, Zap, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import TelegramConnect from '@/components/channels/TelegramConnect';
 import WhatsAppConnect from '@/components/channels/WhatsAppConnect';
 import PhoneConnect from '@/components/channels/PhoneConnect';
