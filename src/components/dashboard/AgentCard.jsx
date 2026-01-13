@@ -95,7 +95,7 @@ export default function AgentCard({ agent, onClick, isSelected, isArchived }) {
                         </div>
                     )}
                     <div>
-                        <h3 className={`font-semibold text-slate-800 ${isArchived ? 'text-sm' : ''}`}>{agent.name}</h3>
+                        <h3 className="font-semibold text-slate-800">{agent.name}</h3>
                         {!isArchived && <p className="text-xs text-slate-500">{agent.business_type || 'Бизнес'}</p>}
                     </div>
                 </div>
