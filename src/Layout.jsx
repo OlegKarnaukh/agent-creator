@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
 
 // Страницы без sidebar
-const pagesWithoutSidebar = ['AgentBuilder', 'Landing'];
+const pagesWithoutSidebar = ['AgentBuilder', 'Landing', 'Auth'];
 
 export default function Layout({ children, currentPageName }) {
     const [user, setUser] = useState(null);

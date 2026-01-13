@@ -30,7 +30,7 @@ export default function Landing() {
         if (isAuthenticated) {
             navigate(createPageUrl('Agents'));
         } else {
-            await base44.auth.redirectToLogin(createPageUrl('Landing'));
+            navigate(createPageUrl('Auth'));
         }
     };
 

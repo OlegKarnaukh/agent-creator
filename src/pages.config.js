@@ -7,6 +7,7 @@ import Conversations from './pages/Conversations';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import Settings from './pages/Settings';
+import Auth from './pages/Auth';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "Landing": Landing,
     "Settings": Settings,
+    "Auth": Auth,
 }
 
 export const pagesConfig = {
