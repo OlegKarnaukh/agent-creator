@@ -470,13 +470,16 @@ export default function Landing() {
             </section>
 
             {/* FINAL CTA */}
-            <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
-                <div className="max-w-3xl mx-auto text-center">
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 pointer-events-none" />
+                <div className="absolute top-10 right-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl" />
+                
+                <div className="max-w-3xl mx-auto text-center relative z-10">
                     <motion.h2 
                         {...fadeInUp}
-                        className="text-4xl font-bold mb-4"
+                        className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
                     >
-                        Запустите первого нейропродавца за 2 минуты
+                        Запустите первого нейропродавца за <span className="bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">2 минуты</span>
                     </motion.h2>
                     <motion.p 
                         {...fadeInUp}
