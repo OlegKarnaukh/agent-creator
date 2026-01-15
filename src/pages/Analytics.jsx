@@ -228,38 +228,41 @@ export default function Analytics() {
                     </ResponsiveContainer>
                 </motion.div>
 
-                <div className="grid grid-cols-1 gap-6">
-                    {/* Средние показатели */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 }}
-                        className="bg-white rounded-2xl p-6 border border-slate-200"
+                        className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-100"
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-slate-900">Средние показатели</h3>
-                            <TrendingUp className="w-5 h-5 text-green-500" />
-                        </div>
-                        <div className="space-y-4">
-                            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
-                                <p className="text-sm text-blue-700 mb-1">Токенов на пользователя</p>
-                                <p className="text-3xl font-bold text-blue-900">{avgTokensPerUser.toLocaleString()}</p>
-                            </div>
-                            <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
-                                <p className="text-sm text-purple-700 mb-1">Агентов на пользователя</p>
-                                <p className="text-3xl font-bold text-purple-900">
-                                    {activeUsers > 0 ? (agents.length / activeUsers).toFixed(1) : '0'}
-                                </p>
-                            </div>
-                            <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
-                                <p className="text-sm text-green-700 mb-1">Средний доход с платящего</p>
-                                <p className="text-3xl font-bold text-green-900">
-                                    ₽{billings.filter(b => b.plan !== 'free').length > 0 
-                                        ? Math.round(mrr / billings.filter(b => b.plan !== 'free').length / 100).toLocaleString()
-                                        : '0'}
-                                </p>
-                            </div>
-                        </div>
+                        <p className="text-sm text-blue-700 mb-2">Токенов на пользователя</p>
+                        <p className="text-4xl font-bold text-blue-900">{avgTokensPerUser.toLocaleString()}</p>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7 }}
+                        className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-100"
+                    >
+                        <p className="text-sm text-purple-700 mb-2">Агентов на пользователя</p>
+                        <p className="text-4xl font-bold text-purple-900">
+                            {activeUsers > 0 ? (agents.length / activeUsers).toFixed(1) : '0'}
+                        </p>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8 }}
+                        className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-100"
+                    >
+                        <p className="text-sm text-green-700 mb-2">Средний доход с платящего</p>
+                        <p className="text-4xl font-bold text-green-900">
+                            ₽{billings.filter(b => b.plan !== 'free').length > 0 
+                                ? Math.round(mrr / billings.filter(b => b.plan !== 'free').length / 100).toLocaleString()
+                                : '0'}
+                        </p>
                     </motion.div>
                 </div>
             </div>
