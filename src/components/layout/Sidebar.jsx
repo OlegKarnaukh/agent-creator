@@ -8,7 +8,9 @@ import {
     Zap, 
     CreditCard,
     BarChart3,
-    Lightbulb
+    Lightbulb,
+    Paperclip,
+    X
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -31,9 +33,38 @@ export default function Sidebar({ user }) {
     const [ideaDialogOpen, setIdeaDialogOpen] = useState(false);
     const [ideaText, setIdeaText] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [attachedFiles, setAttachedFiles] = useState([]);
+    const [isUploading, setIsUploading] = useState(false);
 
     const isActive = (page) => {
         return currentPath === createPageUrl(page) || currentPath === `/${page}`;
+    };
+
+    const handleFileUpload = async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        setIsUploading(true);
+        try {
+            const uploadPromises = files.map(file => 
+                base44.integrations.Core.UploadFile({ file })
+            );
+            const results = await Promise.all(uploadPromises);
+            const newFiles = results.map((result, idx) => ({
+                name: files[idx].name,
+                url: result.file_url
+            }));
+            setAttachedFiles([...attachedFiles, ...newFiles]);
+            toast.success('Файлы загружены');
+        } catch (error) {
+            toast.error('Ошибка загрузки файлов');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const removeFile = (index) => {
+        setAttachedFiles(attachedFiles.filter((_, i) => i !== index));
     };
 
     const handleSendIdea = async () => {
@@ -44,13 +75,18 @@ export default function Sidebar({ user }) {
 
         setIsSending(true);
         try {
+            const fileLinks = attachedFiles.length > 0 
+                ? `\n\nПрикреплённые файлы:\n${attachedFiles.map(f => `${f.name}: ${f.url}`).join('\n')}`
+                : '';
+
             await base44.integrations.Core.SendEmail({
                 to: 'ideas@neuroseller.com',
                 subject: `Новая идея от ${user?.email || 'пользователя'}`,
-                body: `Пользователь: ${user?.full_name || 'Аноним'} (${user?.email || 'нет email'})\n\nИдея:\n${ideaText}`
+                body: `Пользователь: ${user?.full_name || 'Аноним'} (${user?.email || 'нет email'})\n\nИдея:\n${ideaText}${fileLinks}`
             });
             toast.success('Спасибо за вашу идею!');
             setIdeaText('');
+            setAttachedFiles([]);
             setIdeaDialogOpen(false);
         } catch (error) {
             toast.error('Ошибка отправки. Попробуйте позже.');
@@ -129,20 +165,58 @@ export default function Sidebar({ user }) {
                             onChange={(e) => setIdeaText(e.target.value)}
                             className="min-h-32"
                         />
-                        <div className="flex gap-3 justify-end">
-                            <Button
-                                variant="outline"
-                                onClick={() => setIdeaDialogOpen(false)}
-                                disabled={isSending}
-                            >
-                                Отмена
-                            </Button>
-                            <Button
-                                onClick={handleSendIdea}
-                                disabled={isSending}
-                            >
-                                {isSending ? 'Отправка...' : 'Отправить'}
-                            </Button>
+
+                        {attachedFiles.length > 0 && (
+                            <div className="space-y-2">
+                                {attachedFiles.map((file, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
+                                        <Paperclip className="w-4 h-4 text-slate-500" />
+                                        <span className="text-sm text-slate-700 flex-1 truncate">{file.name}</span>
+                                        <button
+                                            onClick={() => removeFile(idx)}
+                                            className="text-slate-400 hover:text-slate-600"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex gap-3 justify-between">
+                            <div>
+                                <input
+                                    type="file"
+                                    id="file-upload"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                />
+                                <Button
+                                    variant="outline"
+                                    onClick={() => document.getElementById('file-upload').click()}
+                                    disabled={isUploading || isSending}
+                                >
+                                    <Paperclip className="w-4 h-4 mr-2" />
+                                    {isUploading ? 'Загрузка...' : 'Прикрепить файлы'}
+                                </Button>
+                            </div>
+                            <div className="flex gap-3">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIdeaDialogOpen(false)}
+                                    disabled={isSending}
+                                >
+                                    Отмена
+                                </Button>
+                                <Button
+                                    onClick={handleSendIdea}
+                                    disabled={isSending || isUploading}
+                                >
+                                    {isSending ? 'Отправка...' : 'Отправить'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </DialogContent>
