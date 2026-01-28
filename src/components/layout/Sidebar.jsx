@@ -9,6 +9,7 @@ import {
     CreditCard,
     BarChart3,
     Users,
+    Phone,
     Lightbulb,
     Paperclip,
     X
@@ -24,6 +25,7 @@ const navigation = [
     { name: 'Агенты', page: 'Agents', icon: Bot },
     { name: 'Диалоги', page: 'Conversations', icon: MessageSquare },
     { name: 'Каналы', page: 'Channels', icon: Zap },
+    { name: 'Прозвон', page: 'Campaigns', icon: Phone },
     { name: 'Биллинг', page: 'Billing', icon: CreditCard },
     { name: 'Партнеры', page: 'Referrals', icon: Users },
     { name: 'Аналитика', page: 'Analytics', icon: BarChart3 },
