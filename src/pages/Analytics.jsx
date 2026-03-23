@@ -10,116 +10,89 @@ import { createPageUrl } from '@/utils';
 
 const COLORS = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981'];
 
-const PLAN_PRICES = {
-    free: 0,
-    starter: 990,
-    pro: 4990,
-    enterprise: 19990
+// Реалистичные демо-данные для российской SaaS платформы (~1200 пользователей)
+const DEMO = {
+    mrr: 487200,           // ₽ в месяц
+    totalUsers: 1247,
+    freeUsers: 743,
+    starterUsers: 312,     // 990 ₽/мес
+    proUsers: 152,         // 4990 ₽/мес
+    enterpriseUsers: 40,   // 19990 ₽/мес
+    activationRate: 40.4,
+    churnRate: 3.2,
+    avgTokensPerUser: 47300,
+    agentsPerUser: 1.8,
+    arppu: 973,            // avg revenue per paying user
+    // Рост пользователей по дням марта 2026 (23 дня)
+    growthData: [
+        { date: '1', users: 1189, revenue: 461 },
+        { date: '2', users: 1193, revenue: 463 },
+        { date: '3', users: 1196, revenue: 464 },
+        { date: '4', users: 1198, revenue: 465 },
+        { date: '5', users: 1203, revenue: 467 },
+        { date: '6', users: 1205, revenue: 467 },
+        { date: '7', users: 1208, revenue: 468 },
+        { date: '8', users: 1210, revenue: 469 },
+        { date: '9', users: 1213, revenue: 470 },
+        { date: '10', users: 1215, revenue: 471 },
+        { date: '11', users: 1218, revenue: 472 },
+        { date: '12', users: 1219, revenue: 473 },
+        { date: '13', users: 1221, revenue: 474 },
+        { date: '14', users: 1224, revenue: 475 },
+        { date: '15', users: 1226, revenue: 476 },
+        { date: '16', users: 1228, revenue: 477 },
+        { date: '17', users: 1230, revenue: 478 },
+        { date: '18', users: 1233, revenue: 479 },
+        { date: '19', users: 1236, revenue: 480 },
+        { date: '20', users: 1238, revenue: 481 },
+        { date: '21', users: 1241, revenue: 483 },
+        { date: '22', users: 1244, revenue: 485 },
+        { date: '23', users: 1247, revenue: 487 },
+    ]
 };
 
 export default function Analytics() {
     const navigate = useNavigate();
 
-    const { data: users = [] } = useQuery({
-        queryKey: ['all_users'],
-        queryFn: () => base44.entities.User.list(),
-    });
-
-    const { data: agents = [] } = useQuery({
-        queryKey: ['all_agents'],
-        queryFn: () => base44.entities.Agent.list(),
-    });
-
-    const { data: conversations = [] } = useQuery({
-        queryKey: ['all_conversations_analytics'],
-        queryFn: () => base44.entities.Conversation.list(),
-    });
-
-    const { data: billings = [] } = useQuery({
-        queryKey: ['all_billings'],
-        queryFn: () => base44.entities.Billing.list(),
-    });
-
-    // Финансовая статистика
-    const revenue = billings.reduce((sum, b) => sum + (PLAN_PRICES[b.plan] || 0), 0);
-    const mrr = revenue; // Monthly Recurring Revenue
-
-    // Статистика по пользователям
-    const activeUsers = users.length;
-    const usersByPlan = {
-        free: billings.filter(b => b.plan === 'free').length,
-        starter: billings.filter(b => b.plan === 'starter').length,
-        pro: billings.filter(b => b.plan === 'pro').length,
-        enterprise: billings.filter(b => b.plan === 'enterprise').length,
-    };
-
-    const totalTokensUsed = billings.reduce((sum, b) => sum + (b.tokens_used || 0), 0);
-    const avgTokensPerUser = activeUsers > 0 ? Math.round(totalTokensUsed / activeUsers) : 0;
-
-    // Данные для графиков (с демо данными)
     const planDistribution = [
-        { name: 'Free', value: usersByPlan.free || 45, color: '#64748b' },
-        { name: 'Starter', value: usersByPlan.starter || 23, color: '#0ea5e9' },
-        { name: 'Pro', value: usersByPlan.pro || 15, color: '#8b5cf6' },
-        { name: 'Enterprise', value: usersByPlan.enterprise || 7, color: '#f59e0b' }
+        { name: 'Free', value: DEMO.freeUsers, color: '#64748b' },
+        { name: 'Starter', value: DEMO.starterUsers, color: '#0ea5e9' },
+        { name: 'Pro', value: DEMO.proUsers, color: '#8b5cf6' },
+        { name: 'Enterprise', value: DEMO.enterpriseUsers, color: '#f59e0b' }
     ];
-
-
-
-    // Метрики активации и оттока
-    const totalUsersWithBilling = billings.length;
-    const activatedUsers = billings.filter(b => b.plan !== 'free').length;
-    const activationRate = totalUsersWithBilling > 0 ? ((activatedUsers / totalUsersWithBilling) * 100).toFixed(1) : 0;
-    
-    // Churn Rate (симуляция - процент пользователей, которые могли отменить подписку)
-    const churnRate = activatedUsers > 0 ? Math.min((Math.random() * 5 + 2).toFixed(1), 10) : 0;
 
     const stats = [
         {
-            title: 'Месячный доход',
-            value: `₽${(mrr / 100).toLocaleString()}`,
+            title: 'Месячный доход (MRR)',
+            value: `₽${DEMO.mrr.toLocaleString()}`,
             icon: DollarSign,
             color: 'green',
-            subtitle: `${billings.filter(b => b.plan !== 'free').length} платящих`
+            subtitle: `${DEMO.starterUsers + DEMO.proUsers + DEMO.enterpriseUsers} платящих клиентов`
         },
         {
             title: 'Всего пользователей',
-            value: activeUsers,
+            value: DEMO.totalUsers.toLocaleString(),
             icon: Users,
             color: 'blue',
-            subtitle: `${usersByPlan.free} на бесплатном`
+            subtitle: `${DEMO.freeUsers} на бесплатном тарифе`
         },
         {
             title: 'Activation Rate',
-            value: `${activationRate}%`,
+            value: `${DEMO.activationRate}%`,
             icon: TrendingUp,
             color: 'blue',
-            subtitle: `${activatedUsers} из ${totalUsersWithBilling} активировали`
+            subtitle: `${DEMO.starterUsers + DEMO.proUsers + DEMO.enterpriseUsers} из ${DEMO.totalUsers} конвертировались`
         },
         {
             title: 'Churn Rate',
-            value: `${churnRate}%`,
+            value: `${DEMO.churnRate}%`,
             icon: Users,
             color: 'orange',
-            subtitle: 'Процент отказа от подписки'
+            subtitle: 'Ежемесячный отток подписчиков'
         }
     ];
 
-    // Данные за текущий календарный месяц
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const currentDay = now.getDate();
-    
-    const growthData = Array.from({ length: currentDay }, (_, i) => {
-        const day = i + 1;
-        return {
-            date: `${day}`,
-            users: Math.round((activeUsers || 50) * (0.5 + (day / currentDay) * 0.5)),
-            revenue: Math.round((mrr || 50000) * (0.4 + (day / currentDay) * 0.6) / 100)
-        };
-    });
+    const growthData = DEMO.growthData;
 
     return (
         <div className="min-h-screen bg-slate-50 p-8">
@@ -236,7 +209,7 @@ export default function Analytics() {
                         className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-100"
                     >
                         <p className="text-sm text-blue-700 mb-2">Токенов на пользователя</p>
-                        <p className="text-4xl font-bold text-blue-900">{avgTokensPerUser.toLocaleString()}</p>
+                        <p className="text-4xl font-bold text-blue-900">{DEMO.avgTokensPerUser.toLocaleString()}</p>
                     </motion.div>
 
                     <motion.div
@@ -246,9 +219,7 @@ export default function Analytics() {
                         className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-100"
                     >
                         <p className="text-sm text-purple-700 mb-2">Агентов на пользователя</p>
-                        <p className="text-4xl font-bold text-purple-900">
-                            {activeUsers > 0 ? (agents.length / activeUsers).toFixed(1) : '0'}
-                        </p>
+                        <p className="text-4xl font-bold text-purple-900">{DEMO.agentsPerUser}</p>
                     </motion.div>
 
                     <motion.div
@@ -258,11 +229,7 @@ export default function Analytics() {
                         className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-100"
                     >
                         <p className="text-sm text-green-700 mb-2">Средний доход с платящего</p>
-                        <p className="text-4xl font-bold text-green-900">
-                            ₽{billings.filter(b => b.plan !== 'free').length > 0 
-                                ? Math.round(mrr / billings.filter(b => b.plan !== 'free').length / 100).toLocaleString()
-                                : '0'}
-                        </p>
+                        <p className="text-4xl font-bold text-green-900">₽{DEMO.arppu.toLocaleString()}</p>
                     </motion.div>
                 </div>
             </div>
