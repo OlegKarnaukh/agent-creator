@@ -1,0 +1,71 @@
+{
+  "name": "Conversation",
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID \u0430\u0433\u0435\u043d\u0442\u0430"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "telegram",
+        "whatsapp",
+        "phone",
+        "website"
+      ],
+      "description": "\u041a\u0430\u043d\u0430\u043b \u043e\u0431\u0449\u0435\u043d\u0438\u044f"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "\u0418\u043c\u044f \u043a\u043b\u0438\u0435\u043d\u0442\u0430"
+    },
+    "customer_phone": {
+      "type": "string",
+      "description": "\u0422\u0435\u043b\u0435\u0444\u043e\u043d \u043a\u043b\u0438\u0435\u043d\u0442\u0430"
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "agent"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "\u0418\u0441\u0442\u043e\u0440\u0438\u044f \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0439"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "transferred"
+      ],
+      "default": "active"
+    },
+    "sentiment": {
+      "type": "string",
+      "enum": [
+        "positive",
+        "neutral",
+        "negative"
+      ]
+    }
+  },
+  "required": [
+    "agent_id",
+    "channel"
+  ]
+}

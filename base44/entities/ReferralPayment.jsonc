@@ -1,0 +1,42 @@
+{
+  "name": "ReferralPayment",
+  "type": "object",
+  "properties": {
+    "referrer_id": {
+      "type": "string",
+      "description": "ID \u043f\u0430\u0440\u0442\u043d\u0435\u0440\u0430 (\u043a\u0442\u043e \u043f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u043b)"
+    },
+    "referred_user_id": {
+      "type": "string",
+      "description": "ID \u043f\u0440\u0438\u0433\u043b\u0430\u0448\u0435\u043d\u043d\u043e\u0433\u043e \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f"
+    },
+    "payment_amount": {
+      "type": "number",
+      "description": "\u0421\u0443\u043c\u043c\u0430 \u043f\u043b\u0430\u0442\u0435\u0436\u0430 \u043e\u0442 \u0440\u0435\u0444\u0435\u0440\u0430\u043b\u0430"
+    },
+    "commission_amount": {
+      "type": "number",
+      "description": "\u0421\u0443\u043c\u043c\u0430 \u043a\u043e\u043c\u0438\u0441\u0441\u0438\u0438 \u043f\u0430\u0440\u0442\u043d\u0435\u0440\u0430 (20%)"
+    },
+    "billing_id": {
+      "type": "string",
+      "description": "ID \u043f\u043b\u0430\u0442\u0435\u0436\u0430 \u0432 \u0431\u0438\u043b\u043b\u0438\u043d\u0433\u0435"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "\u0421\u0442\u0430\u0442\u0443\u0441 \u0432\u044b\u043f\u043b\u0430\u0442\u044b"
+    }
+  },
+  "required": [
+    "referrer_id",
+    "referred_user_id",
+    "payment_amount",
+    "commission_amount"
+  ]
+}
